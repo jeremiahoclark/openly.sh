@@ -7,7 +7,7 @@ type SlugRow = {
   clicks: number;
 };
 
-const BRAND = 'dataly';
+const BRAND = 'openly';
 
 function titleCase(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
@@ -157,9 +157,9 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; }
 .viz-row .viz-sub { font-size: 11px; color: var(--ink-faint); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 16px; }
 .viz-empty { color: var(--ink-faint); font-size: 13px; padding: 40px 0; text-align: center; }
 
-#dataly-timeseries { width: 100%; height: 220px; display: block; }
-#dataly-map-wrap { position: relative; }
-#dataly-map { width: 100%; height: 420px; display: block; }
+#openly-timeseries { width: 100%; height: 220px; display: block; }
+#openly-map-wrap { position: relative; }
+#openly-map { width: 100%; height: 420px; display: block; }
 
 .ts-bar { fill: var(--accent); transition: fill 120ms ease; }
 .ts-bar:hover { fill: #99371e; }
@@ -247,7 +247,7 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
 
   <section class="card">
     <h2>Create a slug</h2>
-    <form class="create" id="dataly-create-form" method="post" action="/api/slugs">
+    <form class="create" id="openly-create-form" method="post" action="/api/slugs">
       <label>Slug name
         <div class="slug-field">
           <input type="text" id="slug-input" name="slug" placeholder="data report 1" required autocomplete="off">
@@ -258,7 +258,7 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
         <input type="url" name="url" placeholder="https://example.com" required autocomplete="off">
       </label>
       <span id="slug-feedback" class="slug-feedback" aria-live="polite"></span>
-      <button type="submit" id="dataly-submit">Create</button>
+      <button type="submit" id="openly-submit">Create</button>
     </form>
     <p class="note">"Data Report 1" becomes <code>data-report-1</code>. Resulting link: <code>${escapeHtml(origin)}/l/data-report-1</code>.</p>
   </section>
@@ -296,7 +296,7 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
       <h3>Clicks over time</h3>
       <p class="viz-sub">Last ${stats.timeSeries.length} days · daily distinct IPs</p>
       ${stats.timeSeries.some((d) => d.count > 0)
-        ? '<svg id="dataly-timeseries"></svg>'
+        ? '<svg id="openly-timeseries"></svg>'
         : '<div class="viz-empty">No clicks yet.</div>'}
     </div>
 
@@ -304,7 +304,7 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
       <h3>Location</h3>
       <p class="viz-sub">Hover a region to see its count · distinct IPs all-time</p>
       ${stats.countriesGeo.length > 0
-        ? '<div id="dataly-map-wrap"><svg id="dataly-map"></svg><div id="dataly-map-tooltip" class="viz-tooltip"></div></div>'
+        ? '<div id="openly-map-wrap"><svg id="openly-map"></svg><div id="openly-map-tooltip" class="viz-tooltip"></div></div>'
         : '<div class="viz-empty">No location data yet.</div>'}
     </div>
 
@@ -316,12 +316,12 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
   </section>
 </main>
 
-<script id="dataly-data" type="application/json">${jsonForScriptTag(dataPayload)}</script>
+<script id="openly-data" type="application/json">${jsonForScriptTag(dataPayload)}</script>
 <script type="module">
   import * as d3 from 'https://esm.sh/d3@7';
   import { feature } from 'https://esm.sh/topojson-client@3';
 
-  const data = JSON.parse(document.getElementById('dataly-data').textContent);
+  const data = JSON.parse(document.getElementById('openly-data').textContent);
 
   // ----- Copy buttons -----
   document.querySelectorAll('.copy-btn').forEach(btn => {
@@ -353,7 +353,7 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
   // ----- Live slug availability check -----
   const slugState = { ready: false };
   function refreshSubmit() {
-    const submit = document.getElementById('dataly-submit');
+    const submit = document.getElementById('openly-submit');
     if (!submit) return;
     submit.disabled = !slugState.ready;
   }
@@ -361,7 +361,7 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
     const input = document.getElementById('slug-input');
     const status = document.getElementById('slug-status');
     const feedback = document.getElementById('slug-feedback');
-    const submit = document.getElementById('dataly-submit');
+    const submit = document.getElementById('openly-submit');
     if (!input || !status || !feedback || !submit) return;
 
     const ICON_CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 5"/></svg>';
@@ -438,7 +438,7 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
   refreshSubmit();
 
   // ----- Time series -----
-  const tsEl = document.getElementById('dataly-timeseries');
+  const tsEl = document.getElementById('openly-timeseries');
   if (tsEl && data.timeSeries.some(d => d.count > 0)) {
     renderTimeSeries(tsEl, data.timeSeries);
   }
@@ -497,9 +497,9 @@ form.create button[disabled]:hover { background: var(--ink-faint); }
   }
 
   // ----- Map -----
-  const mapEl = document.getElementById('dataly-map');
-  const tooltipEl = document.getElementById('dataly-map-tooltip');
-  const wrapEl = document.getElementById('dataly-map-wrap');
+  const mapEl = document.getElementById('openly-map');
+  const tooltipEl = document.getElementById('openly-map-tooltip');
+  const wrapEl = document.getElementById('openly-map-wrap');
   if (mapEl && data.countriesGeo.length > 0) {
     renderMap(mapEl, tooltipEl, wrapEl, data.countriesGeo).catch(err => {
       console.error('Map render failed:', err);

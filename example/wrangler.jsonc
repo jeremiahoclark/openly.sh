@@ -1,13 +1,13 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "dataly",
+  "name": "openly",
   "compatibility_date": "2026-03-01",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./src/index.ts",
   "d1_databases": [
     {
-      "binding": "DATALY",
-      "database_name": "dataly-db",
+      "binding": "OPENLY",
+      "database_name": "openly-db",
       "database_id": ""
     }
   ]

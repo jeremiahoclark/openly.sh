@@ -1,16 +1,16 @@
-# create-dataly
+# openly.sh
 
 **A one-command Cloudflare link shortener with analytics.** Scaffolds a fully
 working Worker + D1 project, creates the database, runs the migration, and
 deploys — in under 60 seconds.
 
 ```bash
-npx create-dataly
+npx create-openly
 # or
-npx create-dataly my-link-tracker
+npx create-openly my-link-tracker
 ```
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/create-dataly/tree/main/example)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/create-openly/tree/main/example)
 
 ---
 
@@ -26,15 +26,15 @@ npx create-dataly my-link-tracker
 
 ## Two ways to install
 
-### 1. `npx create-dataly` (recommended)
+### 1. `npx create-openly` (recommended)
 
 Scaffolds locally, creates the D1 database, runs the migration, and deploys to
 your Cloudflare account. The CLI walks you through it.
 
 ```bash
-npx create-dataly                 # prompts for name and domain
-npx create-dataly my-tracker      # name from arg, prompts for domain
-npx create-dataly t --domain links.example.com
+npx create-openly                 # prompts for name and domain
+npx create-openly my-tracker      # name from arg, prompts for domain
+npx create-openly t --domain links.example.com
 ```
 
 Flags:
@@ -105,9 +105,9 @@ npm run deploy       # migrate D1 + wrangler deploy
 
 ## Repo layout
 
-This repo (`create-dataly`) ships:
+This repo (`create-openly`) ships:
 
-- `bin/cli.mjs` — the `npx create-dataly` CLI. Zero runtime deps.
+- `bin/cli.mjs` — the `npx create-openly` CLI. Zero runtime deps.
 - `templates/` — files copied into the user's project, with `{{PROJECT_NAME}}`,
   `{{DB_NAME}}`, `{{DB_DATABASE_ID}}` placeholders.
 - `example/` — a concrete, deployable rendering of the templates. Targeted by

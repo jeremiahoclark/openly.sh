@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// create-dataly — scaffold and deploy a Cloudflare link shortener with analytics.
+// create-openly — scaffold and deploy a Cloudflare link shortener with analytics.
 // Zero runtime deps; only built-in Node modules.
 
 import { spawn, spawnSync } from 'node:child_process';
@@ -47,10 +47,10 @@ function bail(msg, code = 1) {
 
 function printHelp() {
   log(`
-${c.bold}create-dataly${c.reset} — one-command Cloudflare link shortener.
+${c.bold}create-openly${c.reset} — one-command Cloudflare link shortener.
 
 Usage:
-  npx create-dataly [project-name] [options]
+  npx create-openly [project-name] [options]
 
 Options:
   --domain <domain>   Custom domain (e.g. links.example.com). Leave off for workers.dev.
@@ -59,9 +59,9 @@ Options:
   -h, --help          Show this help.
 
 Examples:
-  npx create-dataly
-  npx create-dataly my-link-tracker
-  npx create-dataly links --domain links.example.com
+  npx create-openly
+  npx create-openly my-link-tracker
+  npx create-openly links --domain links.example.com
 `);
 }
 
@@ -169,7 +169,7 @@ async function checkWrangler() {
   const fallback = runCapture('npx', ['wrangler', '--version']);
   if (fallback.status !== 0) {
     bail(
-      'wrangler is not available. Install Node 18+ and ensure `npx` works, then re-run create-dataly.\n' +
+      'wrangler is not available. Install Node 18+ and ensure `npx` works, then re-run create-openly.\n' +
         '(Or install wrangler globally: `npm i -g wrangler`.)',
     );
   }
@@ -193,14 +193,14 @@ function writeWranglerConfig(projectDir, config) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
-  log(`\n${c.bold}create-dataly${c.reset} — Cloudflare link shortener\n`);
+  log(`\n${c.bold}create-openly${c.reset} — Cloudflare link shortener\n`);
 
   // 1) Project name
   let projectInput = args.positional[0];
   if (!projectInput) {
-    projectInput = await prompt('What should we call this?', 'dataly');
+    projectInput = await prompt('What should we call this?', 'openly');
   }
-  const projectName = slugifyName(projectInput) || 'dataly';
+  const projectName = slugifyName(projectInput) || 'openly';
   const dbName = `${projectName}-db`;
   const projectDir = path.resolve(process.cwd(), projectName);
 

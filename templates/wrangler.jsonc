@@ -6,7 +6,7 @@
   "main": "./src/index.ts",
   "d1_databases": [
     {
-      "binding": "DATALY",
+      "binding": "OPENLY",
       "database_name": "{{DB_NAME}}",
       "database_id": "{{DB_DATABASE_ID}}"
     }

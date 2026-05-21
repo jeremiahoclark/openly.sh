@@ -18,7 +18,7 @@ interface D1Database {
 }
 
 export interface Env {
-  DATALY: D1Database;
+  OPENLY: D1Database;
 }
 
 interface ExecutionContextLike {
@@ -73,7 +73,7 @@ async function apiCheckSlug(url: URL, env: Env): Promise<Response> {
   if (!validation.ok) {
     return Response.json({ available: false, normalized: null, reason: validation.reason });
   }
-  const existing = await env.DATALY.prepare('SELECT slug FROM slugs WHERE slug = ?')
+  const existing = await env.OPENLY.prepare('SELECT slug FROM slugs WHERE slug = ?')
     .bind(validation.slug)
     .first<{ slug: string }>();
   if (existing) {
@@ -111,12 +111,12 @@ async function apiCreateSlug(request: Request, env: Env): Promise<Response> {
   const urlCheck = validateUrl(urlInput);
   if (!urlCheck.ok) return jsonError(urlCheck.reason, 400);
 
-  const existing = await env.DATALY.prepare('SELECT slug FROM slugs WHERE slug = ?')
+  const existing = await env.OPENLY.prepare('SELECT slug FROM slugs WHERE slug = ?')
     .bind(slugCheck.slug)
     .first<{ slug: string }>();
   if (existing) return jsonError(`Slug "${slugCheck.slug}" already exists.`, 409);
 
-  await env.DATALY.prepare('INSERT INTO slugs (slug, url, created_at) VALUES (?, ?, ?)')
+  await env.OPENLY.prepare('INSERT INTO slugs (slug, url, created_at) VALUES (?, ?, ?)')
     .bind(slugCheck.slug, urlCheck.url, Date.now())
     .run();
 
@@ -135,7 +135,7 @@ async function apiListSlugs(env: Env): Promise<Response> {
 }
 
 async function listSlugsWithStats(env: Env): Promise<SlugWithStats[]> {
-  const { results } = await env.DATALY.prepare(
+  const { results } = await env.OPENLY.prepare(
     `SELECT
         s.slug,
         s.url,
@@ -191,7 +191,7 @@ async function loadStats(env: Env, slugFilter: string | null): Promise<Dashboard
   const slugClause = slugFilter ? 'AND slug = ?' : '';
   const baseParams: unknown[] = slugFilter ? [slugFilter] : [];
 
-  const timeSeriesRows = await env.DATALY.prepare(
+  const timeSeriesRows = await env.OPENLY.prepare(
     `SELECT
         date(ts / 1000, 'unixepoch') AS day,
         COUNT(DISTINCT ip) AS count
@@ -203,7 +203,7 @@ async function loadStats(env: Env, slugFilter: string | null): Promise<Dashboard
     .bind(timeSeriesCutoff, ...baseParams)
     .all<{ day: string; count: number }>();
 
-  const countryRows = await env.DATALY.prepare(
+  const countryRows = await env.OPENLY.prepare(
     `SELECT
         COALESCE(NULLIF(country, ''), 'Unknown') AS code,
         COUNT(DISTINCT ip) AS count
@@ -215,7 +215,7 @@ async function loadStats(env: Env, slugFilter: string | null): Promise<Dashboard
     .bind(...baseParams)
     .all<{ code: string; count: number }>();
 
-  const uaRows = await env.DATALY.prepare(
+  const uaRows = await env.OPENLY.prepare(
     `SELECT ip, MAX(ua) AS ua
       FROM clicks
       WHERE is_prefetch = 0 ${slugClause}
@@ -294,7 +294,7 @@ async function handleRedirect(
   env: Env,
   ctx: ExecutionContextLike,
 ): Promise<Response> {
-  const row = await env.DATALY.prepare('SELECT url FROM slugs WHERE slug = ?')
+  const row = await env.OPENLY.prepare('SELECT url FROM slugs WHERE slug = ?')
     .bind(slug)
     .first<{ url: string }>();
 
@@ -319,7 +319,7 @@ async function logClick(slug: string, request: Request, env: Env): Promise<void>
   const prefetch = isPrefetch({ asn, asOrg, userAgent: ua }) ? 1 : 0;
 
   try {
-    await env.DATALY.prepare(
+    await env.OPENLY.prepare(
       `INSERT INTO clicks
         (slug, ts, ip, ua, country, city, region, timezone, asn, as_org, is_prefetch)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

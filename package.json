@@ -1,10 +1,10 @@
 {
-  "name": "create-dataly",
+  "name": "create-openly",
   "version": "0.1.0",
-  "description": "One-command Cloudflare link shortener with analytics. `npx create-dataly` and you're live in 60 seconds.",
+  "description": "openly.sh — a one-command Cloudflare link shortener with analytics. `npx create-openly` and you're live in 60 seconds.",
   "type": "module",
   "bin": {
-    "create-dataly": "./bin/cli.mjs"
+    "create-openly": "./bin/cli.mjs"
   },
   "files": [
     "bin",
@@ -27,6 +27,6 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jeremiahoclark/create-dataly.git"
+    "url": "git+https://github.com/jeremiahoclark/create-openly.git"
   }
 }

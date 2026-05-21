@@ -10,7 +10,7 @@ interface D1Database {
   prepare(query: string): D1PreparedStatement;
 }
 interface Env {
-  DATALY: D1Database;
+  OPENLY: D1Database;
 }
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
