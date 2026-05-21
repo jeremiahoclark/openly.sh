@@ -1,0 +1,17 @@
+{
+  "name": "dataly",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler d1 execute dataly-db --remote --file=src/schema.sql && wrangler deploy",
+    "db:migrate": "wrangler d1 execute dataly-db --remote --file=src/schema.sql",
+    "db:migrate:local": "wrangler d1 execute dataly-db --local --file=src/schema.sql",
+    "test": "node --test --experimental-strip-types tests/*.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "wrangler": "^4",
+    "typescript": "^5"
+  }
+}

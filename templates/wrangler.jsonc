@@ -1,0 +1,14 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "{{PROJECT_NAME}}",
+  "compatibility_date": "2026-03-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "main": "./src/index.ts",
+  "d1_databases": [
+    {
+      "binding": "DATALY",
+      "database_name": "{{DB_NAME}}",
+      "database_id": "{{DB_DATABASE_ID}}"
+    }
+  ]
+}

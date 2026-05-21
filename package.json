@@ -1,0 +1,32 @@
+{
+  "name": "create-dataly",
+  "version": "0.1.0",
+  "description": "One-command Cloudflare link shortener with analytics. `npx create-dataly` and you're live in 60 seconds.",
+  "type": "module",
+  "bin": {
+    "create-dataly": "./bin/cli.mjs"
+  },
+  "files": [
+    "bin",
+    "templates",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "d1",
+    "link-shortener",
+    "bitly",
+    "analytics",
+    "create"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jeremiahoclark/create-dataly.git"
+  }
+}
