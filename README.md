@@ -4,7 +4,7 @@
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/openly.sh/tree/main/example)
 
-No need to spin up a VPS — openly.sh runs on Cloudflare's infra. Free tier covers it at $0.
+No need to pay for your click analytics or spin up a VPS — openly.sh runs on Cloudflare's infra. Free tier covers it at $0.
 
 ## Problem
 
@@ -12,11 +12,10 @@ You need a short link — maybe for an email blast, a podcast, a tweet, a QR cod
 
 The usual options:
 
-- **Bit.ly** is easy, but you don't own the links. The free tier is rate-limited, custom domains are a paid upgrade, and the day a billing card lapses your links go cold.
+- **Hosted shorteners** are easy until you want click analytics — that runs ~$30/month. You also don't own the links: the day a billing card lapses, they go cold.
 - **Roll your own.** You spend a Saturday wiring up Postgres and Next.js, pay for a VPS forever, and the analytics page never gets built.
-- **A "link management" SaaS.** Twenty bucks a month minimum, plus a dashboard you didn't design and a vendor you didn't pick.
 
-None of these feel right when you just want a link to share.
+Neither feels right when you just want a link to share.
 
 ## How this solves it
 
