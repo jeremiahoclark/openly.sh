@@ -1,6 +1,10 @@
 # openly.sh
 
-A link shortener you actually own. One command, sixty seconds, your domain, your database.
+**Own your links with one click.**
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/openly.sh/tree/main/example)
+
+No need to spin up a VPS — openly.sh runs on Cloudflare's infra. Free tier covers it at $0.
 
 ## Problem
 
