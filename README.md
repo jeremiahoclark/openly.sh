@@ -1,35 +1,42 @@
 # openly.sh
 
-**A one-command Cloudflare link shortener with analytics.** Scaffolds a fully
-working Worker + D1 project, creates the database, runs the migration, and
-deploys — in under 60 seconds.
+A link shortener you actually own. One command, sixty seconds, your domain, your database.
+
+## Problem
+
+You need a short link — maybe for an email blast, a podcast, a tweet, a QR code on a flyer. You want `links.you.com/launch` instead of a mile-long UTM tail. And then, a week later, you want to know: *did anyone actually click this?*
+
+The usual options:
+
+- **Bit.ly** is easy, but you don't own the links. The free tier is rate-limited, custom domains are a paid upgrade, and the day a billing card lapses your links go cold.
+- **Roll your own.** You spend a Saturday wiring up Postgres and Next.js, pay for a VPS forever, and the analytics page never gets built.
+- **A "link management" SaaS.** Twenty bucks a month minimum, plus a dashboard you didn't design and a vendor you didn't pick.
+
+None of these feel right when you just want a link to share.
+
+## How this solves it
+
+One command. About sixty seconds. When it's done, you have a link shortener running on your own Cloudflare account — worker, database, domain, all yours. No middleman.
 
 ```bash
 npx create-openly
-# or
-npx create-openly my-link-tracker
 ```
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/openly.sh/tree/main/example)
+What you get a minute later:
 
----
+- **Short links** like `links.you.com/launch` — your domain, your slugs.
+- **A dashboard** where you create slugs and watch them get clicked. Daily visitors, world map, device + OS + country breakdowns.
+- **Real numbers.** Google and Apple's prefetch bots are filtered out, so your click counts aren't inflated by automated scanners that never saw your page.
+- **A $0 bill** at low traffic. Cloudflare's free tier covers it.
+- **About a thousand lines of plain TypeScript** you can read in an hour and modify anything.
 
-## What you get
-
-- **Short links** at `<your-domain>/l/<slug>` (or `<your-domain>/<slug>`).
-- **A dashboard** at `<your-domain>/` to create slugs and see analytics.
-- **Analytics**: distinct visitors per day, world map, devices, OSes, top
-  countries — with Google/Apple prefetch traffic filtered out.
-- **Zero servers, zero cost** at low traffic. Runs on Cloudflare Workers + D1.
-- **No framework**: plain TypeScript, no bundler beyond wrangler. The whole
-  app is ~1,000 lines you can read and modify.
+You own the worker. You own the database. You own the domain. Nobody else has a key.
 
 ## Two ways to install
 
 ### 1. `npx create-openly` (recommended)
 
-Scaffolds locally, creates the D1 database, runs the migration, and deploys to
-your Cloudflare account. The CLI walks you through it.
+The CLI walks you through it: scaffolds the project locally, creates the D1 database, runs the schema migration, and deploys to your Cloudflare account.
 
 ```bash
 npx create-openly                 # prompts for name and domain
@@ -39,22 +46,24 @@ npx create-openly t --domain links.example.com
 
 Flags:
 
-| Flag             | Meaning                                                   |
+| Flag             | What it does                                              |
 | ---------------- | --------------------------------------------------------- |
 | `--domain <d>`   | Custom domain (e.g. `links.example.com`).                 |
 | `--skip-deploy`  | Scaffold + create D1 + migrate, but don't deploy.         |
 | `--skip-install` | Skip `npm install` (useful in CI).                        |
 | `-h`, `--help`   | Show help.                                                |
 
-Requires: Node 18+, a free Cloudflare account.
+You need Node 18+ and a free Cloudflare account.
 
 ### 2. Deploy to Cloudflare button
 
-Click the button above. Cloudflare clones the [`example/`](./example) tree,
-prompts you to create a D1 database, runs the migration, and deploys —
-all inside Cloudflare's UI. No local CLI needed.
+Click the button. Cloudflare clones the [`example/`](./example) tree, asks you to create a D1 database, runs the migration, and deploys — all inside Cloudflare's UI. No local CLI needed.
 
-## How it works
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/openly.sh/tree/main/example)
+
+## What's inside
+
+Under the hood: a single [Cloudflare Worker](https://workers.cloudflare.com/) (plain TypeScript, no framework) backed by a [D1](https://developers.cloudflare.com/d1/) SQLite database. The dashboard is server-rendered HTML with D3 loaded from a CDN for charts. The generated project lays out like this:
 
 ```
 my-tracker/
@@ -85,13 +94,11 @@ my-tracker/
 | `GET /l/:slug`      | Canonical short redirect (302).                    |
 | `GET /:slug`        | Redirect alias (root-level convenience).           |
 
-### What this is NOT
+## What this is NOT
 
-- **Not a SaaS.** It's a single-tenant, self-hosted tool that you own.
-- **No auth.** Anyone with the dashboard URL can create slugs. Put
-  [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/)
-  in front if you need auth.
-- **No multi-tenancy, billing, or team features.** Out of scope by design.
+- **Not a SaaS.** Single-tenant, self-hosted, you own it.
+- **No auth.** Anyone with the dashboard URL can create slugs. If that matters, put [Cloudflare Access](https://developers.cloudflare.com/cloudflare-one/policies/access/) in front.
+- **No multi-tenancy, billing, or team features.** That's a different product.
 
 ## Development
 
@@ -105,13 +112,11 @@ npm run deploy       # migrate D1 + wrangler deploy
 
 ## Repo layout
 
-This repo (`create-openly`) ships:
+This repo (`openly.sh`) ships:
 
 - `bin/cli.mjs` — the `npx create-openly` CLI. Zero runtime deps.
-- `templates/` — files copied into the user's project, with `{{PROJECT_NAME}}`,
-  `{{DB_NAME}}`, `{{DB_DATABASE_ID}}` placeholders.
-- `example/` — a concrete, deployable rendering of the templates. Targeted by
-  the Deploy-to-Cloudflare button.
+- `templates/` — files copied into the user's project, with `{{PROJECT_NAME}}`, `{{DB_NAME}}`, `{{DB_DATABASE_ID}}` placeholders.
+- `example/` — a concrete, deployable rendering of the templates. Targeted by the Deploy-to-Cloudflare button.
 
 ## License
 
