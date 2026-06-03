@@ -9,8 +9,14 @@ interface D1PreparedStatement {
 interface D1Database {
   prepare(query: string): D1PreparedStatement;
 }
+interface PendingKv {
+  get(key: string, type?: 'json'): Promise<unknown>;
+  put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
+  delete(key: string): Promise<void>;
+}
 interface Env {
   OPENLY: D1Database;
+  PENDING: PendingKv;
 }
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;

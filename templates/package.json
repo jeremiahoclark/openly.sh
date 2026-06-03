@@ -1,6 +1,7 @@
 {
   "name": "{{PROJECT_NAME}}",
   "private": true,
+  "license": "LicenseRef-Openly-Attribution-1.0",
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",

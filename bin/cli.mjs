@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// create-openly — scaffold and deploy a Cloudflare link shortener with analytics.
+// create-openly — scaffold and deploy a Cloudflare link tracker with analytics.
 // Zero runtime deps; only built-in Node modules.
 
 import { spawn, spawnSync } from 'node:child_process';
@@ -47,13 +47,15 @@ function bail(msg, code = 1) {
 
 function printHelp() {
   log(`
-${c.bold}create-openly${c.reset} — one-command Cloudflare link shortener.
+${c.bold}create-openly${c.reset} — one-command Cloudflare link tracker.
 
 Usage:
   npx create-openly [project-name] [options]
 
 Options:
   --domain <domain>   Custom domain (e.g. links.example.com). Leave off for workers.dev.
+  --email-from <from> Magic-link sender (e.g. "Openly <links@example.com>").
+  --skip-email-setup  Do not prompt for the email sender.
   --skip-deploy       Scaffold files and create D1 but don't deploy.
   --skip-install      Skip "npm install".
   -h, --help          Show this help.
@@ -62,11 +64,19 @@ Examples:
   npx create-openly
   npx create-openly my-link-tracker
   npx create-openly links --domain links.example.com
+  npx create-openly links --email-from "Openly <links@example.com>"
 `);
 }
 
 function parseArgs(argv) {
-  const args = { positional: [], domain: null, skipDeploy: false, skipInstall: false };
+  const args = {
+    positional: [],
+    domain: null,
+    emailFrom: null,
+    skipEmailSetup: false,
+    skipDeploy: false,
+    skipInstall: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '-h' || a === '--help') {
@@ -76,6 +86,12 @@ function parseArgs(argv) {
       args.domain = argv[++i] || null;
     } else if (a.startsWith('--domain=')) {
       args.domain = a.slice('--domain='.length);
+    } else if (a === '--email-from') {
+      args.emailFrom = argv[++i] || null;
+    } else if (a.startsWith('--email-from=')) {
+      args.emailFrom = a.slice('--email-from='.length);
+    } else if (a === '--skip-email-setup') {
+      args.skipEmailSetup = true;
     } else if (a === '--skip-deploy') {
       args.skipDeploy = true;
     } else if (a === '--skip-install') {
@@ -162,6 +178,13 @@ function parseD1DatabaseId(output) {
   return jsonMatch ? jsonMatch[1] : null;
 }
 
+function parseKvNamespaceId(output) {
+  const match = output.match(/id\s*=\s*"([0-9a-fA-F]+)"/);
+  if (match) return match[1];
+  const jsonMatch = output.match(/"id"\s*:\s*"([0-9a-fA-F]+)"/);
+  return jsonMatch ? jsonMatch[1] : null;
+}
+
 async function checkWrangler() {
   const check = runCapture('npx', ['--no-install', 'wrangler', '--version']);
   if (check.status === 0) return;
@@ -193,7 +216,7 @@ function writeWranglerConfig(projectDir, config) {
 async function main() {
   const args = parseArgs(process.argv.slice(2));
 
-  log(`\n${c.bold}create-openly${c.reset} — Cloudflare link shortener\n`);
+  log(`\n${c.bold}create-openly${c.reset} — Cloudflare link tracker\n`);
 
   // 1) Project name
   let projectInput = args.positional[0];
@@ -216,29 +239,46 @@ async function main() {
   }
   if (domain) domain = domain.trim().replace(/^https?:\/\//, '').replace(/\/$/, '');
 
-  // 3) Prerequisites
+  // 3) Optional magic-link email setup
+  let emailFrom = args.emailFrom;
+  if (!args.skipEmailSetup) {
+    if (emailFrom === null) {
+      const answer = await prompt('Cloudflare Email sender? (leave blank to configure later)', '');
+      emailFrom = answer || null;
+    }
+  }
+  if (emailFrom) emailFrom = emailFrom.trim();
+
+  // 4) Prerequisites
   step('Checking wrangler…');
   await checkWrangler();
   ok('wrangler ok');
 
-  // 4) Scaffold files
+  // 5) Scaffold files
   step(`Creating ${c.bold}${projectName}${c.reset}/…`);
   copyTemplates(TEMPLATES_DIR, projectDir, {
     PROJECT_NAME: projectName,
     DB_NAME: dbName,
     DB_DATABASE_ID: '', // backfilled after D1 create
+    KV_NAMESPACE_ID: '', // backfilled after KV create
   });
 
-  // Add custom domain route to wrangler.jsonc if requested.
-  if (domain) {
+  // Add custom domain route and runtime vars to wrangler.jsonc if requested.
+  if (domain || emailFrom) {
     const cfgPath = path.join(projectDir, 'wrangler.jsonc');
     const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8').replace(/^\s*\/\/.*$/gm, ''));
-    cfg.routes = [{ pattern: domain, custom_domain: true }];
+    if (domain) {
+      cfg.routes = [{ pattern: domain, custom_domain: true }];
+      cfg.vars = { ...(cfg.vars || {}), APP_ORIGIN: `https://${domain}` };
+    }
+    if (emailFrom) {
+      cfg.vars = { ...(cfg.vars || {}), EMAIL_FROM: emailFrom };
+    }
     writeWranglerConfig(projectDir, cfg);
   }
   ok('Files written');
 
-  // 5) Install
+  // 6) Install
   if (!args.skipInstall) {
     step('Installing dependencies…');
     try {
@@ -250,10 +290,10 @@ async function main() {
     }
   }
 
-  // 6) Login
+  // 7) Login
   await ensureWranglerLogin(projectDir);
 
-  // 7) D1 create
+  // 8) D1 create
   step(`Creating D1 database ${c.bold}${dbName}${c.reset}…`);
   const create = runCapture('npx', ['wrangler', 'd1', 'create', dbName], { cwd: projectDir });
   if (create.status !== 0) {
@@ -273,15 +313,29 @@ async function main() {
   }
   ok(`D1 created · ${c.dim}${dbId}${c.reset}`);
 
-  // 8) Patch wrangler.jsonc with the real id
+  // 9) KV namespace for pending links
+  const kvName = `${projectName}-pending`;
+  step(`Creating KV namespace ${c.bold}${kvName}${c.reset}…`);
+  const kvCreate = runCapture('npx', ['wrangler', 'kv', 'namespace', 'create', kvName], { cwd: projectDir });
+  const kvId = kvCreate.status === 0 ? parseKvNamespaceId(kvCreate.stdout + kvCreate.stderr) : null;
+  if (!kvId) {
+    warn('Could not create or parse KV namespace id. Pending links need KV before deploy.');
+    log(kvCreate.stdout);
+    log(kvCreate.stderr);
+  } else {
+    ok(`KV created · ${c.dim}${kvId}${c.reset}`);
+  }
+
+  // 10) Patch wrangler.jsonc with real ids
   {
     const cfgPath = path.join(projectDir, 'wrangler.jsonc');
     let txt = fs.readFileSync(cfgPath, 'utf8');
     txt = txt.replace('{{DB_DATABASE_ID}}', dbId);
+    if (kvId) txt = txt.replace('{{KV_NAMESPACE_ID}}', kvId);
     fs.writeFileSync(cfgPath, txt);
   }
 
-  // 9) Migrate
+  // 11) Migrate
   step('Running schema migration…');
   try {
     await runInherit('npx', ['wrangler', 'd1', 'execute', dbName, '--remote', '--file=src/schema.sql'], {
@@ -293,7 +347,7 @@ async function main() {
     warn('You can re-run it later with `npm run db:migrate`.');
   }
 
-  // 10) Deploy
+  // 12) Deploy
   if (args.skipDeploy) {
     log(`\n${c.bold}Skipped deploy.${c.reset} Run \`cd ${projectName} && npm run deploy\` when you're ready.`);
     return;
@@ -306,22 +360,35 @@ async function main() {
     bail(`Deploy failed: ${err.message}\nFix the issue and run \`cd ${projectName} && npx wrangler deploy\`.`);
   }
 
-  // 11) Success
+  // 13) Email setup reminder
+  if (!emailFrom) {
+    warn('Magic-link email is not configured yet.');
+    warn('Until EMAIL_FROM is set, sign-in requests show a development link instead of sending email.');
+  }
+
+  // 14) Success
   const dashboardUrl = domain ? `https://${domain}` : `https://${projectName}.<your-account>.workers.dev`;
   log(`
 ${c.green}${c.bold}✓ Done.${c.reset}
 
   Dashboard:   ${c.cyan}${dashboardUrl}${c.reset}
   Short links: ${c.cyan}${dashboardUrl}/l/<slug>${c.reset}
+  Sign in:     ${emailFrom ? c.green + 'Cloudflare email binding configured' + c.reset : c.yellow + 'email setup pending' + c.reset}
 
-  Create a slug by visiting the dashboard, or:
-    curl -X POST ${dashboardUrl}/api/slugs \\
+  Create a link on the homepage (reserved in KV until sign-in), or via API when signed in:
+    curl -X POST ${dashboardUrl}/api/pending \\
       -H 'content-type: application/json' \\
       -d '{"slug":"launch","url":"https://example.com"}'
 
   Develop locally:   ${c.dim}cd ${projectName} && npm run dev${c.reset}
   Redeploy:          ${c.dim}cd ${projectName} && npm run deploy${c.reset}
 `);
+
+  if (!emailFrom) {
+    log(`${c.yellow}Email:${c.reset} set up Cloudflare Email Service when you are ready:`);
+    log(`  ${c.dim}cd ${projectName}${c.reset}`);
+    log(`  Add EMAIL_FROM to wrangler.jsonc vars, enable Cloudflare Email Service for the sender domain, then redeploy.\n`);
+  }
 
   if (domain) {
     log(`${c.yellow}DNS:${c.reset} point ${c.bold}${domain}${c.reset} at your Cloudflare account.`);

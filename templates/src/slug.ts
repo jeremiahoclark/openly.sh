@@ -1,6 +1,6 @@
 // Slugs live under /l/* so they don't collide with app routes — this set just
 // blocks confusing words inside that namespace.
-export const RESERVED_SLUGS = new Set(['api', 'admin', '_health']);
+export const RESERVED_SLUGS = new Set(['api', 'admin', 'auth', 'signin', 'logout', '_health']);
 
 export const SLUG_MAX_LENGTH = 80;
 

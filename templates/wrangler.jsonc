@@ -10,5 +10,16 @@
       "database_name": "{{DB_NAME}}",
       "database_id": "{{DB_DATABASE_ID}}"
     }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "PENDING",
+      "id": "{{KV_NAMESPACE_ID}}"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL"
+    }
   ]
 }

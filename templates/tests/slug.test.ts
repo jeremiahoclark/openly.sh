@@ -47,6 +47,9 @@ test('validateSlug: rejects reserved words', () => {
   const result = validateSlug('api');
   assert.equal(result.ok, false);
   if (!result.ok) assert.match(result.reason, /reserved/);
+
+  const authResult = validateSlug('signin');
+  assert.equal(authResult.ok, false);
 });
 
 test('validateSlug: accepts normal slug-shaped strings', () => {
