@@ -1,112 +1,182 @@
-# Openly design system
+---
+version: alpha
+name: Open Air
+description: Warm, optimistic identity for openly — a link tracker you own.
+colors:
+  primary: "#201A17"
+  secondary: "#6B6259"
+  tertiary: "#E8500F"
+  tertiary-deep: "#C03D08"
+  tertiary-bright: "#FF6A2B"
+  neutral: "#FAF6EF"
+  surface: "#FFFFFF"
+  surface-tint: "#FFF0E5"
+  rule: "#E8E0D3"
+  success: "#1F7A47"
+  success-soft: "#EDF7F0"
+  danger: "#C92A2A"
+  danger-soft: "#FDF0F0"
+typography:
+  headline-display:
+    fontFamily: Bricolage Grotesque
+    fontSize: 64px
+    fontWeight: 700
+    lineHeight: 1.04
+    letterSpacing: -0.025em
+  headline-lg:
+    fontFamily: Bricolage Grotesque
+    fontSize: 32px
+    fontWeight: 700
+    lineHeight: 1.15
+    letterSpacing: -0.02em
+  headline-md:
+    fontFamily: Bricolage Grotesque
+    fontSize: 22px
+    fontWeight: 650
+    lineHeight: 1.25
+    letterSpacing: -0.01em
+  body-lg:
+    fontFamily: system-ui
+    fontSize: 17px
+    fontWeight: 400
+    lineHeight: 1.6
+  body-md:
+    fontFamily: system-ui
+    fontSize: 15px
+    fontWeight: 400
+    lineHeight: 1.55
+  body-sm:
+    fontFamily: system-ui
+    fontSize: 13px
+    fontWeight: 400
+    lineHeight: 1.5
+  label-lg:
+    fontFamily: system-ui
+    fontSize: 14px
+    fontWeight: 600
+    lineHeight: 1.2
+  label-md:
+    fontFamily: system-ui
+    fontSize: 13px
+    fontWeight: 500
+    lineHeight: 1.2
+  label-caps:
+    fontFamily: system-ui
+    fontSize: 13px
+    fontWeight: 700
+    lineHeight: 1.2
+    letterSpacing: 0.08em
+rounded:
+  sm: 10px
+  md: 14px
+  lg: 20px
+  xl: 28px
+  full: 9999px
+spacing:
+  xs: 4px
+  sm: 8px
+  md: 16px
+  lg: 32px
+  xl: 64px
+  gutter: 24px
+  max-landing: 1280px
+  max-dashboard: 1080px
+components:
+  button-primary:
+    backgroundColor: "{colors.tertiary}"
+    textColor: "#FFFFFF"
+    typography: "{typography.label-lg}"
+    rounded: "{rounded.full}"
+    padding: 16px
+  button-primary-hover:
+    backgroundColor: "{colors.tertiary-deep}"
+  button-ghost:
+    backgroundColor: transparent
+    textColor: "{colors.secondary}"
+    rounded: "{rounded.full}"
+    padding: 8px
+  input:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.primary}"
+    rounded: "{rounded.md}"
+    padding: 14px
+  card:
+    backgroundColor: "{colors.surface}"
+    textColor: "{colors.primary}"
+    rounded: "{rounded.lg}"
+    padding: 24px
+  chip:
+    backgroundColor: "{colors.surface-tint}"
+    textColor: "{colors.primary}"
+    rounded: "{rounded.full}"
+    padding: 8px
+---
 
-Product and visual direction for Openly, aligned with the editorial minimalism of [Microsoft Surface RTX Spark Dev Box](https://www.microsoft.com/en-us/surface/devices/surface-rtx-spark-dev-box).
+# Open Air — openly design system
 
-## North star
+## Overview
 
-**Create a link first. Sign in to go live.**
+openly is a short-link tracker you own outright — the domain, the code, the click data. The interface should feel the way that ownership feels: **warm, light, and quietly confident**. Daylight, not dashboard-gray.
 
-The homepage is the product — not a login wall. Users reserve a slug and destination immediately; data sits in KV until magic-link signup promotes links into D1.
+The audience is developers and indie operators who see a hundred SaaS dashboards a week. We win by *not* looking like one: cream paper instead of white-on-gray, one vivid flame accent instead of corporate blue, a display face with personality instead of default system bold. Friendly, never cute; energetic, never loud.
 
-## Reference: Surface RTX Spark page
+The homepage is the product, not a brochure. A visitor should be able to reserve a link within five seconds of landing, and the page's single point of maximum color — the flame-orange Reserve button — should make the next step unmissable.
 
-Use this page as the mood board, not a pixel-perfect clone.
+## Colors
 
-| Pattern | Surface reference | Openly application |
-|--------|-------------------|-------------------|
-| Hero typography | Large display headline (`Built for more.`) with tight tracking | `Built for sharing faster.` — clamp-based `hero-display`, `-0.04em` letter-spacing |
-| Layout | Full-bleed light canvas, product/form as focal object | Split hero + stage card on desktop; stacked on mobile |
-| Color | Near-black copy on cool gray-white, accent used sparingly | `--ink: #0b0b0c`, `--paper: #f4f4f6`, accent `#2563eb` for emphasis words only |
-| Surfaces | Soft cards, subtle shadow, generous radius | 20px panel radius, `0 24px 48px` shadow on create/activate card |
-| Sections | Numbered story blocks (`Code on day one.`, feature grid) | Three-column `feature-grid` under the fold |
-| CTA | High-contrast primary (black button) | `btn-primary` uses `--ink` fill, not blue — blue reserved for links/highlights |
-| Photography | Product on neutral background | Logo mark + typographic hero (no stock photos in v1) |
-| Footer | Light legal/offer line | Single line: plan limits |
+Warm neutrals carry the page; one high-chroma accent does all the pointing.
 
-## User flow
-
-```mermaid
-flowchart LR
-  A[Landing: slug + URL] --> B[KV pending + guest cookie]
-  B --> C[Email magic link]
-  C --> D[Verify + migrate to D1]
-  D --> E[Dashboard / live redirect]
-  B --> F[Visitor hits /l/slug]
-  F --> G[Gate page: activate]
-```
-
-1. **Reserve** — `POST /api/pending` writes `slug:{slug}` and `guest:{id}` in KV (7-day TTL).
-2. **Activate** — Magic link stores `magic:{tokenHash} → guestId`. On verify, pending rows migrate into `slugs` + `link_accounts`.
-3. **Redirect** — `/l/:slug` serves 302 only when the slug exists in D1. Pending slugs show `renderPendingGate`.
-
-## Pages
-
-| Route | Audience | Purpose |
-|-------|----------|---------|
-| `/` | Guest | Landing + create + post-reserve activation |
-| `/` | Signed in | Dashboard (analytics) |
-| `/signin` | Guest | Secondary sign-in |
-| `/l/:slug` | Public | Live redirect or pending gate |
-| `/auth/*` | Guest | Magic link |
+- **Primary — Espresso (#201A17):** warm near-black for headlines, body copy, and the nav. Black with the chill taken off.
+- **Secondary — Driftwood (#6B6259):** warm gray for ledes, captions, metadata, and borders' text companions.
+- **Tertiary — Flare (#E8500F):** the only saturated color on screen. Primary buttons, the accent word in the hero, live states, chart fills. Deep variant **#C03D08** for hover and small-text links (AA on cream); bright variant **#FF6A2B** for marks on dark tiles.
+- **Neutral — Daylight (#FAF6EF):** warm cream page canvas. Pure white (**#FFFFFF**) is reserved for raised surfaces — cards, inputs, the link bar — so surfaces read as objects sitting on paper.
+- **Surface tint — Peach (#FFF0E5):** soft fill for chips, badges, and the hero glow. Warmth without weight.
+- **Functional:** success #1F7A47 on #EDF7F0; danger #C92A2A on #FDF0F0.
 
 ## Typography
 
-- **UI**: `Segoe UI`, system sans stack (matches Microsoft marketing pages on Windows).
-- **Display**: Weight 650, size `clamp(2.75rem, 8vw, 4.75rem)` on landing hero.
-- **Body**: 16px / 1.55 on landing; 15px on dashboard.
-- **Labels**: 13px, medium weight, `--ink-soft`.
+Two voices: an expressive display face for moments, a quiet system face for everything else.
 
-## Spacing & grid
+- **Display — Bricolage Grotesque (600–800):** hero headlines, page titles, card headings. Loaded from Google Fonts with `display=swap`; falls back to the system stack. Its slightly flared terminals give the brand its smile.
+- **Body — system-ui stack:** 15–17px for paragraphs and UI. Zero load cost, native feel.
+- **Labels:** 13–14px medium/semibold in the system face. Eyebrow/kicker text is 13px bold, uppercase, 0.08em tracking, set in Flare.
+- Hierarchy comes from **weight and warmth, not size alone** — a 700-weight Bricolage headline over a Driftwood lede needs no divider.
 
-- Max content width: **1120px** (landing), **1080px** (dashboard).
-- Section rhythm: 24px / 40px / 56px vertical steps.
-- Form gaps: 14–16px between fields.
+## Layout
+
+- Landing: centered single column, max 1280px, generous air — hero owns the first viewport. Section rhythm in 8px steps (24 / 40 / 64).
+- Dashboard: max 1080px, denser 8px rhythm, cards in a 12/24px gap grid.
+- The link bar (slug + destination + button) is the hero's focal object: one pill-shaped white bar, full-width up to 1000px.
+- Forms group related fields inside cards with 24px internal padding.
+
+## Elevation & Depth
+
+Depth comes from **paper layering**: cream canvas → white card → peach tint detail. Shadows are warm and soft (`rgba(64, 32, 8, .10)` range), used only on the focal object per view (link bar, auth panel) plus a hairline warm border (#E8E0D3) on every raised surface. No glassmorphism, no heavy drop shadows, no dark mode (yet).
+
+## Shapes
+
+Round and friendly. **Pills (full radius) for everything interactive** — buttons, chips, the link bar. Cards at 20px, inputs at 14px, small elements at 10px. The logo tile uses a 16/64 corner ratio (25%). Never mix sharp corners in; if something must be rectangular, it gets at least 10px.
 
 ## Components
 
-### Landing create panel
+- **Primary button:** Flare fill, white text, pill, 600 weight. Hover deepens to #C03D08 and lifts 1px; press returns flat. Exactly one per view.
+- **Ghost button:** transparent with warm-gray text and hairline border, pill. Sign out, archive, secondary nav.
+- **Inputs:** white fill, warm hairline border, 14px radius, 3px Flare focus ring at 25% alpha.
+- **Chips (trust row, plan pill, badges):** peach tint fill, espresso text, pill, 13px.
+- **Link bar:** white pill, slug field + divider + destination field + Flare submit segment. Valid slug shows a green inset check; the submit segment is gray until the form validates, then turns Flare.
+- **Stat cards:** white, 20px radius, label-md in Driftwood over a 1.5rem tabular number.
+- **Charts:** bars and fills in Flare; map ramps cream → Flare; gridlines in rule tone. One hue, varied tone.
 
-- White card, 28px padding, primary form.
-- Live slug check (public `GET /api/check`).
-- Submit label: **Reserve link** (disabled until slug validates).
+## Logo
 
-### Activation panel
+The mark is an **espresso rounded-square tile carrying an open "o"**: a cream ring broken at the north-east, with a Flare arrow escaping through the gap. It is the product in one glyph — a link (the ring), opened (the gap), going somewhere (the arrow). Ring and arrow share one stroke weight (6.5/64) with round caps. On light surfaces use the tile; never set the bare ring on cream. Wordmark: lowercase "openly" in Bricolage Grotesque 700, tight tracking, espresso.
 
-- Shown after reserve (`/?created=slug`) and on pending gate.
-- Link preview block (mono URL, destination muted).
-- Email field → `POST /auth/magic-link`.
+## Do's and Don'ts
 
-### Dashboard
-
-- Unchanged information architecture; welcome flash after first sign-in.
-- Stat cards, usage meter, analytics blocks.
-
-## Tokens (landing)
-
-```css
---ink: #0b0b0c;
---paper: #f4f4f6;
---accent: #2563eb;
---hero-display: clamp(2.75rem, 8vw, 4.75rem);
-```
-
-Dashboard retains its own token set in `dashboard.ts` for density; converge in a later pass if needed.
-
-## Infrastructure
-
-- **KV binding**: `PENDING` — guest sessions, reserved slugs, magic-link guest association.
-- **D1**: authoritative slugs, accounts, clicks after activation.
-- **Limit**: Up to 5 pending links per guest (matches free tier).
-
-## Copy tone
-
-- Short, confident sentences (Surface-style).
-- Avoid jargon; say **reserve**, **activate**, **go live**.
-- Example eyebrow: `Private links. Simple analytics.`
-
-## Future polish (optional)
-
-- Scroll-driven hero scale (Surface marketing motion).
-- Product render or abstract grid texture in hero background.
-- Dark mode variant with inverted hero card.
-- Unify dashboard tokens with landing for one design language.
+- Do use Flare for exactly one primary action per screen; everything else points at it.
+- Do set ledes and supporting copy in Driftwood, not faded black.
+- Don't introduce a second saturated hue — charts, badges, and states stay in the Flare/peach family (green/red strictly for success/error).
+- Don't use pure white as a page background; cream canvas, white objects.
+- Don't exceed two font families; Bricolage is for headings only — never for body text or inputs.
+- Do keep WCAG AA: body text in Espresso on cream (14.9:1); small Flare text only in the deep variant (#C03D08).
+- Don't add stock imagery or illustration; the typography, the mark, and one warm glow are the visual interest.

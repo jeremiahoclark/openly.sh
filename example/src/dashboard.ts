@@ -14,8 +14,9 @@ const BRAND = 'openly';
 function brandLogoSvg(size = 28): string {
   return `<svg class="brand-logo" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true">
   <rect width="64" height="64" rx="16" fill="var(--logo-bg)"/>
-  <path d="M24 34.5h16c4.1 0 7.5-3.4 7.5-7.5S44.1 19.5 40 19.5h-5.5" fill="none" stroke="var(--logo-ink)" stroke-width="4" stroke-linecap="round"/>
-  <path d="M40 29.5H24c-4.1 0-7.5 3.4-7.5 7.5s3.4 7.5 7.5 7.5h5.5" fill="none" stroke="var(--logo-accent)" stroke-width="4" stroke-linecap="round"/>
+  <path d="M41.8 33.74A13 13 0 1 1 31.26 23.2" fill="none" stroke="var(--logo-ink)" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M33.5 31.5L45.5 19.5" fill="none" stroke="var(--logo-accent)" stroke-width="6.5" stroke-linecap="round"/>
+  <path d="M39.5 17.5H47.5V25.5" fill="none" stroke="var(--logo-accent)" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
 }
 
@@ -483,7 +484,7 @@ ${dashboardStyles()}
 
     const color = d3.scaleSequential()
       .domain([0, Math.max(1, maxCount)])
-      .interpolator(d3.interpolateRgb('#dbeafe', '#2563eb'));
+      .interpolator(d3.interpolateRgb('#FFE4D2', '#E8500F'));
 
     const topo = await fetch('https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json').then(r => r.json());
     const countries = feature(topo, topo.objects.countries);
@@ -574,34 +575,35 @@ function barListPanel(title: string, buckets: StatsBucket[]): string {
 function cssTokens(): string {
   return `:root {
   color-scheme: light;
-  --ink: #111827;
-  --ink-soft: #4b5563;
-  --ink-faint: #9ca3af;
-  --paper: #f3f4f8;
+  --ink: #201A17;
+  --ink-soft: #6B6259;
+  --ink-faint: #9A8F83;
+  --paper: #FAF6EF;
   --surface: #fff;
-  --surface-raised: #fafbfc;
-  --rule: #e5e7eb;
-  --rule-soft: #f0f1f4;
-  --accent: #2563eb;
-  --accent-hover: #1d4ed8;
-  --accent-pressed: #1e40af;
-  --accent-soft: #eff6ff;
-  --focus: rgba(37, 99, 235, .28);
-  --success: #15803d;
-  --success-soft: #f0fdf4;
-  --danger: #dc2626;
-  --danger-soft: #fef2f2;
-  --shadow-sm: 0 1px 2px rgba(17, 24, 39, .05);
-  --shadow-md: 0 8px 24px rgba(17, 24, 39, .06);
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --bar-bg: #e8ecf2;
-  --logo-bg: #eef2ff;
-  --logo-ink: #111827;
-  --logo-accent: #2563eb;
-  --map-empty: #f0f2f6;
+  --surface-raised: #FCFAF5;
+  --rule: #E8E0D3;
+  --rule-soft: #F3EEE5;
+  --accent: #E8500F;
+  --accent-hover: #C03D08;
+  --accent-pressed: #A53305;
+  --accent-soft: #FFF0E5;
+  --focus: rgba(232, 80, 15, .28);
+  --success: #1F7A47;
+  --success-soft: #EDF7F0;
+  --danger: #C92A2A;
+  --danger-soft: #FDF0F0;
+  --shadow-sm: 0 1px 2px rgba(56, 32, 16, .05);
+  --shadow-md: 0 8px 24px rgba(56, 32, 16, .07);
+  --radius-sm: 10px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --bar-bg: #F0E9DD;
+  --logo-bg: #201A17;
+  --logo-ink: #FAF6EF;
+  --logo-accent: #FF6A2B;
+  --map-empty: #F3EEE5;
   --map-stroke: #fff;
+  --display-font: "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
 }`;
 }
 
@@ -611,7 +613,7 @@ function baseStyles(): string {
 body {
   margin: 0;
   background:
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, .08), transparent),
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(232, 80, 15, .07), transparent),
     var(--paper);
   color: var(--ink);
   font: 15px/1.5 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
@@ -619,7 +621,8 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 h1 {
-  font-weight: 650;
+  font-family: var(--display-font);
+  font-weight: 700;
   font-size: 1.75rem;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -809,7 +812,8 @@ main { max-width: 1080px; margin: 0 auto; }
   margin-bottom: 18px;
 }
 .card h2 {
-  font-weight: 650;
+  font-family: var(--display-font);
+  font-weight: 700;
   font-size: 1.05rem;
   line-height: 1.25;
   margin: 0;
@@ -818,7 +822,7 @@ main { max-width: 1080px; margin: 0 auto; }
 .card-badge {
   font-size: 11px;
   font-weight: 600;
-  color: var(--accent);
+  color: var(--accent-hover);
   background: var(--accent-soft);
   padding: 4px 10px;
   border-radius: 999px;
@@ -832,11 +836,11 @@ main { max-width: 1080px; margin: 0 auto; }
 }
 .usage-meter-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--accent), #60a5fa);
+  background: linear-gradient(90deg, var(--accent), #FF8B52);
   border-radius: 999px;
   transition: width 300ms ease;
 }
-.usage-meter-fill.is-full { background: linear-gradient(90deg, var(--danger), #f87171); }
+.usage-meter-fill.is-full { background: linear-gradient(90deg, var(--danger), #E66A6A); }
 .usage-row {
   display: flex;
   justify-content: space-between;
@@ -884,7 +888,7 @@ th {
 }
 td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500; }
 .slug-cell { display: flex; align-items: center; gap: 8px; }
-.slug-name { color: var(--accent); font-weight: 600; font-size: 14px; }
+.slug-name { color: var(--accent-hover); font-weight: 600; font-size: 14px; }
 .copy-btn {
   appearance: none;
   background: var(--rule-soft);
@@ -928,7 +932,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500
   display: inline-flex;
   align-items: center;
   background: var(--accent-soft);
-  color: var(--accent);
+  color: var(--accent-hover);
   padding: 4px 10px;
   font-size: 11px;
   font-weight: 600;
@@ -1002,7 +1006,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500
 .bar-list .bar-label { color: var(--ink); font-weight: 500; }
 .bar-list .bar-count { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
 .bar-list .bar-track { height: 6px; background: var(--bar-bg); border-radius: 999px; overflow: hidden; }
-.bar-list .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #60a5fa); border-radius: 999px; }
+.bar-list .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #FF8B52); border-radius: 999px; }
 .slug-field { position: relative; }
 .slug-field input { padding-right: 40px; }
 .slug-status {
@@ -1060,6 +1064,9 @@ function headHtml(title: string, origin = ''): string {
 <meta property="og:image" content="${escapeHtml(ogImage)}">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600..800&display=swap" rel="stylesheet">
 <style>
 ${baseStyles()}
 </style>`;
