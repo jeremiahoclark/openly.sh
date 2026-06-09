@@ -74,7 +74,7 @@ Without `EMAIL_FROM`, sign-in requests return a development-only link on screen 
 
 ### 2. Deploy to Cloudflare button
 
-Click the button. Cloudflare clones the [`example/`](./example) tree and deploys inside Cloudflare's UI. After first deploy, create/bind D1 if prompted, run `src/schema.sql`, enable Cloudflare Email Service for your sender domain, and set the `EMAIL_FROM` var for production magic-link email.
+Click the button. Cloudflare clones the [`example/`](./example) tree into a new repo on your GitHub and deploys it — the D1 database and KV namespace are provisioned automatically, and the schema bootstraps itself on the first request. The one manual step is production email: enable Cloudflare Email Service / Email Routing for your sender domain and set the `EMAIL_FROM` var in `wrangler.jsonc`. Until then, sign-in links are shown on screen instead of emailed, so the app works immediately.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/openly.sh/tree/main/example)
 
