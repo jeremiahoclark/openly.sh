@@ -762,7 +762,7 @@ main { max-width: 1080px; margin: 0 auto; }
   display: flex;
   justify-content: space-between;
   gap: 24px;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 28px;
 }
 .topbar-brand .subtitle { margin: 4px 0 0; }
@@ -855,7 +855,7 @@ main { max-width: 1080px; margin: 0 auto; }
   margin-bottom: 18px;
   line-height: 1.45;
 }
-form.create { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+form.create { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 24px; max-width: 880px; }
 form.create button { grid-column: 1 / -1; justify-self: start; }
 form.create button[disabled] { background: var(--ink-faint); cursor: not-allowed; }
 form.create button[disabled]:hover { background: var(--ink-faint); }
@@ -996,7 +996,7 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500
 .bar-list .bar-track { height: 6px; background: var(--bar-bg); border-radius: 999px; overflow: hidden; }
 .bar-list .bar-fill { height: 100%; background: linear-gradient(90deg, var(--accent), #FF8B52); border-radius: 999px; }
 .slug-field { position: relative; }
-.slug-field input { padding-right: 40px; }
+.slug-field input { width: 100%; padding-right: 40px; }
 .slug-status {
   position: absolute;
   right: 12px;
