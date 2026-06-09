@@ -9,6 +9,7 @@ import {
   isSlugReserved,
   listPendingForGuest,
   readGuestId,
+  updatePendingLinkUrl,
 } from './pending.ts';
 import { parseUA } from './ua.ts';
 import { alpha2ToNumeric } from './countryCodes.ts';
@@ -123,6 +124,16 @@ export async function handleRequest(
     const authed = await getAuthenticatedUser(request, env);
     if (authed) return jsonError('Already signed in. Use the dashboard to create links.', 400);
     return apiCreatePending(request, env);
+  }
+
+  const pendingSlugMatch = path.match(/^\/api\/pending\/([^/]+)$/);
+  if (pendingSlugMatch) {
+    if (request.method !== 'PATCH') {
+      return new Response('Method Not Allowed', { status: 405, headers: { Allow: 'PATCH' } });
+    }
+    const authed = await getAuthenticatedUser(request, env);
+    if (authed) return jsonError('Already signed in. Use the dashboard to edit links.', 400);
+    return apiUpdatePending(pendingSlugMatch[1], request, env);
   }
 
   const user = await getAuthenticatedUser(request, env);
@@ -286,6 +297,33 @@ async function apiCreatePending(request: Request, env: Env): Promise<Response> {
   return redirectResponse(location, 303, headers);
 }
 
+async function apiUpdatePending(slug: string, request: Request, env: Env): Promise<Response> {
+  const guestId = readGuestId(request);
+  if (!guestId) return jsonError('Session expired. Create the link again.', 401);
+
+  let urlInput = '';
+  const contentType = request.headers.get('content-type') || '';
+  if (contentType.includes('application/json')) {
+    try {
+      const body = (await request.json()) as { url?: string };
+      urlInput = body.url ?? '';
+    } catch {
+      return jsonError('Invalid JSON body.', 400);
+    }
+  } else {
+    const form = await request.formData();
+    urlInput = String(form.get('url') ?? '');
+  }
+
+  const urlCheck = validateUrl(urlInput);
+  if (!urlCheck.ok) return jsonError(urlCheck.reason, 400);
+
+  const updated = await updatePendingLinkUrl(env, guestId, slug, urlCheck.url);
+  if (!updated.ok) return jsonError(updated.reason, 404);
+
+  return Response.json({ ok: true, slug: updated.link.slug, url: updated.link.url });
+}
+
 async function renderLandingResponse(request: Request, env: Env, url: URL): Promise<Response> {
   const origin = url.origin;
   const error = url.searchParams.get('error') || undefined;
@@ -351,9 +389,13 @@ async function apiCreateSlug(request: Request, env: Env, user: AuthUser): Promis
   if (existing) return jsonError(`Slug "${slugCheck.slug}" already exists.`, 409);
 
   const now = Date.now();
-  await env.OPENLY.prepare('INSERT INTO slugs (slug, url, created_at) VALUES (?, ?, ?)')
-    .bind(slugCheck.slug, urlCheck.url, now)
-    .run();
+  try {
+    await env.OPENLY.prepare('INSERT INTO slugs (slug, url, created_at) VALUES (?, ?, ?)')
+      .bind(slugCheck.slug, urlCheck.url, now)
+      .run();
+  } catch {
+    return jsonError(`Slug "${slugCheck.slug}" already exists.`, 409);
+  }
   try {
     await env.OPENLY.prepare(
       'INSERT INTO link_accounts (slug, account_id, archived_at, created_at) VALUES (?, ?, NULL, ?)',
@@ -361,7 +403,7 @@ async function apiCreateSlug(request: Request, env: Env, user: AuthUser): Promis
       .bind(slugCheck.slug, user.id, now)
       .run();
   } catch (err) {
-    await env.OPENLY.prepare('DELETE FROM slugs WHERE slug = ?').bind(slugCheck.slug).run();
+    await deleteSlugIfUnowned(env, slugCheck.slug);
     throw err;
   }
 
@@ -403,6 +445,15 @@ async function countActiveSlugs(env: Env, accountId: string): Promise<number> {
     .bind(accountId)
     .first<{ count: number }>();
   return row?.count ?? 0;
+}
+
+async function deleteSlugIfUnowned(env: Env, slug: string): Promise<void> {
+  const owner = await env.OPENLY.prepare('SELECT slug FROM link_accounts WHERE slug = ?')
+    .bind(slug)
+    .first<{ slug: string }>();
+  if (!owner) {
+    await env.OPENLY.prepare('DELETE FROM slugs WHERE slug = ?').bind(slug).run();
+  }
 }
 
 async function listSlugsWithStats(env: Env, accountId: string): Promise<SlugWithStats[]> {
@@ -596,8 +647,8 @@ async function handleRedirect(
   const row = await env.OPENLY.prepare(
     `SELECT s.url
       FROM slugs s
-      LEFT JOIN link_accounts la ON la.slug = s.slug
-      WHERE s.slug = ? AND (la.slug IS NULL OR la.archived_at IS NULL)`,
+      JOIN link_accounts la ON la.slug = s.slug
+      WHERE s.slug = ? AND la.archived_at IS NULL`,
   )
     .bind(slug)
     .first<{ url: string }>();

@@ -1,5 +1,6 @@
 import type { CountryGeo, DashboardStats, StatsBucket } from './router.ts';
 import { FREE_LINK_LIMIT, type AuthUser, type MagicLinkRequestResult } from './auth.ts';
+import { destinationUrlClientHelpers } from './urlField.ts';
 
 type SlugRow = {
   slug: string;
@@ -8,7 +9,7 @@ type SlugRow = {
   clicks: number;
 };
 
-const BRAND = 'openly';
+const BRAND = '{{PROJECT_NAME}}';
 
 function brandLogoSvg(size = 28): string {
   return `<svg class="brand-logo" width="${size}" height="${size}" viewBox="0 0 64 64" aria-hidden="true">
@@ -182,7 +183,7 @@ ${dashboardStyles()}
         </div>
       </label>
       <label>Destination
-        <input type="url" name="url" placeholder="https://example.com" required autocomplete="off" ${atLimit ? 'disabled' : ''}>
+        <input type="text" id="url-input" name="url" inputmode="url" placeholder="company.com" required autocomplete="off" ${atLimit ? 'disabled' : ''}>
       </label>
       <span id="slug-feedback" class="slug-feedback" aria-live="polite"></span>
       <button type="submit" id="openly-submit" ${atLimit ? 'disabled' : ''}>Create link</button>
@@ -251,7 +252,28 @@ ${dashboardStyles()}
   import * as d3 from 'https://esm.sh/d3@7';
   import { feature } from 'https://esm.sh/topojson-client@3';
 
+  ${destinationUrlClientHelpers()}
+
   const data = JSON.parse(document.getElementById('openly-data').textContent);
+
+  (() => {
+    const createForm = document.getElementById('openly-create-form');
+    const urlInput = document.getElementById('url-input');
+    if (!createForm || !urlInput) return;
+    createForm.addEventListener('submit', (e) => {
+      const check = validateDestinationUrl(urlInput.value);
+      if (!check.ok) {
+        e.preventDefault();
+        const feedback = document.getElementById('slug-feedback');
+        if (feedback) {
+          feedback.className = 'slug-feedback is-taken';
+          feedback.textContent = check.reason;
+        }
+        return;
+      }
+      prepareDestinationUrlInput(urlInput);
+    });
+  })();
 
   // ----- Copy buttons -----
   document.querySelectorAll('.copy-btn').forEach(btn => {

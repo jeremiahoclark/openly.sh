@@ -259,8 +259,6 @@ async function main() {
   copyTemplates(TEMPLATES_DIR, projectDir, {
     PROJECT_NAME: projectName,
     DB_NAME: dbName,
-    DB_DATABASE_ID: '', // backfilled after D1 create
-    KV_NAMESPACE_ID: '', // backfilled after KV create
   });
 
   // Add custom domain route and runtime vars to wrangler.jsonc if requested.
@@ -319,9 +317,13 @@ async function main() {
   const kvCreate = runCapture('npx', ['wrangler', 'kv', 'namespace', 'create', kvName], { cwd: projectDir });
   const kvId = kvCreate.status === 0 ? parseKvNamespaceId(kvCreate.stdout + kvCreate.stderr) : null;
   if (!kvId) {
-    warn('Could not create or parse KV namespace id. Pending links need KV before deploy.');
+    fail('Could not create or parse KV namespace id. Pending links need KV before deploy.');
     log(kvCreate.stdout);
     log(kvCreate.stderr);
+    bail(
+      `You can create it manually:\n  cd ${projectName}\n  npx wrangler kv namespace create ${kvName}\n` +
+        `Then put the id into wrangler.jsonc and run \`npm run db:migrate && npx wrangler deploy\`.`,
+    );
   } else {
     ok(`KV created · ${c.dim}${kvId}${c.reset}`);
   }
@@ -331,7 +333,7 @@ async function main() {
     const cfgPath = path.join(projectDir, 'wrangler.jsonc');
     let txt = fs.readFileSync(cfgPath, 'utf8');
     txt = txt.replace('{{DB_DATABASE_ID}}', dbId);
-    if (kvId) txt = txt.replace('{{KV_NAMESPACE_ID}}', kvId);
+    txt = txt.replace('{{KV_NAMESPACE_ID}}', kvId);
     fs.writeFileSync(cfgPath, txt);
   }
 

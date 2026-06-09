@@ -1,5 +1,6 @@
 import type { PendingLink } from './pending.ts';
 import { FREE_LINK_LIMIT } from './auth.ts';
+import { destinationUrlClientHelpers } from './urlField.ts';
 
 const BRAND = '{{PROJECT_NAME}}';
 const GITHUB_REPO = 'https://github.com/jeremiahoclark/openly.sh';
@@ -32,7 +33,7 @@ export function renderLanding(opts: LandingOpts): string {
       ? opts.reserved
           .map(
             (l) =>
-              `<li><code>${escapeHtml(l.slug)}</code> → <span class="muted">${escapeHtml(l.url)}</span></li>`,
+              `<li><span class="reserved-check" aria-hidden="true">✓</span><code>${escapeHtml(l.slug)}</code><span class="muted">${escapeHtml(l.url)}</span></li>`,
           )
           .join('')
       : '';
@@ -53,8 +54,9 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
 
 <main class="landing-main">
   <section class="hero-center">
-    <h1>Short links<br><span class="hero-accent">made Openly</span></h1>
-    <p class="hero-lede">Ship <code>links.you.com/launch</code> with click analytics — without a $30/mo hosted shortener or a weekend wiring Postgres. Self-host in one command, or sign in and run it as a service.</p>
+    <p class="hero-kicker">Cloudflare link tracker</p>
+    <h1>Create a short link<br><span class="hero-accent">you control</span></h1>
+    <p class="hero-lede">Reserve a slug, point it at any website, then activate it with email. You keep the domain, code, and click data.</p>
 
     ${opts.welcome ? `<p class="flash is-ok">Welcome back.${opts.migratedCount ? ` ${opts.migratedCount} link${opts.migratedCount === 1 ? '' : 's'} activated.` : ''}</p>` : ''}
     ${opts.error ? `<p class="flash is-error">${escapeHtml(opts.error)}</p>` : ''}
@@ -65,9 +67,12 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
       <p class="activate-lead">Link reserved. Sign in with a magic link to make it live.</p>
       <div class="link-preview">
         <code class="link-preview-url">${escapeHtml(shortUrl)}</code>
-        <span class="link-preview-arrow" aria-hidden="true">→</span>
-        <span class="muted">${escapeHtml(opts.created.url)}</span>
+        <span class="link-preview-check" aria-hidden="true">✓</span>
       </div>
+      <label class="activate-url-label">Destination
+        <input type="text" class="activate-url-input" id="activate-url-input" value="${escapeHtml(opts.created.url)}" inputmode="url" autocomplete="off" aria-label="Destination URL">
+      </label>
+      <p id="activate-url-feedback" class="slug-feedback" aria-live="polite"></p>
       <form class="activate-bar" method="post" action="/auth/magic-link">
         <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" aria-label="Email">
         <button type="submit" class="btn-primary">Send magic link</button>
@@ -77,21 +82,25 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
     </div>`
         : `<form class="link-bar-form" id="openly-landing-form" method="post" action="/api/pending">
       <div class="link-bar" role="group" aria-label="Create a short link">
-        <div class="link-bar-slug">
+        <div class="link-bar-slug" id="slug-field">
           <span class="link-bar-prefix" aria-hidden="true">/l/</span>
-          <input type="text" id="slug-input" name="slug" placeholder="launch" required autocomplete="off" aria-label="Slug">
-          <span id="slug-status" class="slug-status" aria-hidden="true"></span>
+          <input type="text" id="slug-input" name="slug" placeholder="launch" required autocomplete="off" spellcheck="false" aria-label="Slug" aria-describedby="slug-feedback">
+          <span id="slug-status" class="slug-status" role="status" aria-live="polite"></span>
         </div>
         <span class="link-bar-divider" aria-hidden="true"></span>
-        <input type="url" class="link-bar-url" name="url" placeholder="https://yoursite.com/docs" required autocomplete="off" aria-label="Destination URL">
-        <button type="submit" id="openly-submit" class="link-bar-submit" disabled>Create link</button>
+        <input type="text" class="link-bar-url" id="url-input" name="url" inputmode="url" placeholder="company.com" required autocomplete="off" aria-label="Destination URL">
+        <button type="submit" id="openly-submit" class="link-bar-submit">Reserve link</button>
       </div>
       <p id="slug-feedback" class="slug-feedback" aria-live="polite"></p>
     </form>
-    <p class="hint"><code>data report 1</code> becomes <code>data-report-1</code>. Link goes live after you sign in.</p>`
+    <p class="hint"><code>data report 1</code> becomes <code>data-report-1</code>. Bare domains are normalized to HTTPS. Reserved links go live after sign-in.</p>`
     }
 
-    <a class="github-cta" href="${GITHUB_REPO}" target="_blank" rel="noopener noreferrer">${githubIcon()} Star us on GitHub</a>
+    <div class="trust-row" aria-label="Product details">
+      <span>No password</span>
+      <span>5 free active links</span>
+      <span>Prefetch filtering</span>
+    </div>
   </section>
 
   ${
@@ -105,16 +114,16 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
 
   <section class="feature-grid">
     <article>
-      <h3>Deploy in about 60 seconds</h3>
-      <p><code>npx create-openly</code> scaffolds a Worker, D1 database, magic-link auth, and dashboard on Cloudflare. You own the code and the bill stays $0 at low traffic.</p>
+      <h3>Cloudflare-native</h3>
+      <p><code>npx create-openly</code> scaffolds a Worker, D1 database, KV namespace, magic-link auth, and dashboard in your account.</p>
     </article>
     <article>
-      <h3>Analytics developers trust</h3>
-      <p>Unique visitors, geo map, device and OS breakdowns. Google and Apple prefetch bots are filtered out so counts reflect real clicks.</p>
+      <h3>Cleaner analytics</h3>
+      <p>Unique visitors, country, device, and OS breakdowns. Google and Apple prefetch traffic is marked so counts stay useful.</p>
     </article>
     <article>
-      <h3>Self-host or run as a service</h3>
-      <p>Same TypeScript you can read in an hour. Indie devs copy-paste their own tracker; operators run multi-user magic-link sign-in on the same stack.</p>
+      <h3>Plain TypeScript</h3>
+      <p>No framework lock-in. Read the worker in one sitting, adjust limits or branding, and redeploy from the same project.</p>
     </article>
   </section>
 </main>
@@ -123,8 +132,8 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
   <p>Free: ${FREE_LINK_LIMIT} active links · Pro included for new accounts · <a href="${GITHUB_REPO}">openly.sh on GitHub</a></p>
 </footer>
 
-<script type="module">
-${opts.created ? '' : landingSlugScript()}
+<script>
+${opts.created ? activateUrlScript(opts.created.slug) : landingSlugScript()}
 </script>
 </body>
 </html>`;
@@ -164,76 +173,301 @@ ${headHtml(`${BRAND} — activate link`, opts.origin)}
 </html>`;
 }
 
+function activateUrlScript(slug: string): string {
+  const slugJson = JSON.stringify(slug);
+  return `(function() {
+  ${destinationUrlClientHelpers()}
+  (function() {
+    const input = document.getElementById('activate-url-input');
+    const feedback = document.getElementById('activate-url-feedback');
+    if (!input || !feedback) return;
+    const slug = ${slugJson};
+    let lastSaved = input.value;
+    let saveTimer = null;
+
+    function showSaved(url) {
+      feedback.className = 'slug-feedback is-available';
+      feedback.textContent = 'Destination saved';
+      lastSaved = url;
+    }
+
+    function showError(reason) {
+      feedback.className = 'slug-feedback is-taken';
+      feedback.textContent = reason;
+    }
+
+    async function save() {
+      const check = validateDestinationUrl(input.value);
+      if (!check.ok) {
+        showError(check.reason);
+        return;
+      }
+      const display = displayDestinationUrl(check.url, input.value);
+      if (document.activeElement !== input) input.value = display;
+      if (display === lastSaved) return;
+      try {
+        const res = await fetch(\`/api/pending/\${encodeURIComponent(slug)}\`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: check.url }),
+        });
+        const body = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          showError(body.error || 'Could not save destination.');
+          return;
+        }
+        showSaved(body.url || check.url);
+      } catch {
+        showError('Could not save destination.');
+      }
+    }
+
+    function queueSave() {
+      clearTimeout(saveTimer);
+      saveTimer = setTimeout(() => { void save(); }, 400);
+    }
+
+    input.addEventListener('blur', () => {
+      const check = validateDestinationUrl(input.value);
+      if (check.ok) input.value = displayDestinationUrl(check.url, input.value);
+      void save();
+    });
+    input.addEventListener('input', () => {
+      const check = validateDestinationUrl(input.value);
+      if (!input.value.trim()) {
+        feedback.className = 'slug-feedback';
+        feedback.textContent = '';
+        return;
+      }
+      if (!check.ok) showError(check.reason);
+      else {
+        feedback.className = 'slug-feedback';
+        feedback.textContent = '';
+      }
+      queueSave();
+    });
+  })();
+  })();`;
+}
+
 function landingSlugScript(): string {
-  return `
-  const slugState = { ready: false };
+  return `(function() {
+  ${destinationUrlClientHelpers()}
+
+  const slugState = { ready: false, checking: false, normalized: '' };
+  const form = document.getElementById('openly-landing-form');
   const input = document.getElementById('slug-input');
+  const urlInput = document.getElementById('url-input');
+  const slugField = document.getElementById('slug-field');
   const status = document.getElementById('slug-status');
   const feedback = document.getElementById('slug-feedback');
   const submit = document.getElementById('openly-submit');
-  if (!input || !status || !feedback || !submit) return;
+  if (!form || !input || !urlInput || !status || !feedback || !submit) return;
 
-  const ICON_CHECK = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5l3.2 3L13 5"/></svg>';
-  const ICON_X = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
-  const ICON_SPINNER = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><circle cx="8" cy="8" r="5" stroke-opacity="0.25"/><path d="M8 3a5 5 0 0 1 5 5"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="0.9s" repeatCount="indefinite"/></path></svg>';
+  const siteOrigin = location.origin;
+  const ICON_CHECK = '<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10.5l3.5 3.5 7.5-8"/></svg>';
+  const ICON_X = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg>';
+  const ICON_SPINNER = '<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="8" cy="8" r="5" stroke-opacity="0.25"/><path d="M8 3a5 5 0 0 1 5 5"><animateTransform attributeName="transform" type="rotate" from="0 8 8" to="360 8 8" dur="0.9s" repeatCount="indefinite"/></path></svg>';
 
-  function refreshSubmit() { submit.disabled = !slugState.ready; }
+  function slugifyClient(raw) {
+    return String(raw || '').toLowerCase().normalize('NFKD').replace(/[\\u0300-\\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 80);
+  }
+
+  function setSlugFieldValid(on) {
+    slugField?.classList.toggle('is-valid', on);
+  }
+
+  function refreshSubmit() {
+    const urlCheck = validateDestinationUrl(urlInput.value);
+    const canSubmit = slugState.ready && !slugState.checking && urlCheck.ok;
+    submit.classList.toggle('is-ready', canSubmit);
+    submit.setAttribute('aria-disabled', canSubmit ? 'false' : 'true');
+  }
+
   function setIdle() {
     status.className = 'slug-status';
     status.innerHTML = '';
+    status.removeAttribute('aria-label');
+    setSlugFieldValid(false);
     feedback.className = 'slug-feedback';
     feedback.textContent = '';
     slugState.ready = false;
+    slugState.checking = false;
+    slugState.normalized = '';
     refreshSubmit();
   }
+
   function setChecking() {
     status.className = 'slug-status is-checking';
     status.innerHTML = ICON_SPINNER;
-    feedback.textContent = 'Checking availability…';
+    status.setAttribute('aria-label', 'Checking name on this site');
+    setSlugFieldValid(false);
+    feedback.className = 'slug-feedback';
+    feedback.textContent = 'Checking name on this site…';
     slugState.ready = false;
+    slugState.checking = true;
     refreshSubmit();
   }
+
   function setAvailable(normalized) {
     status.className = 'slug-status is-available';
     status.innerHTML = ICON_CHECK;
+    status.setAttribute('aria-label', 'Name available on this site');
+    setSlugFieldValid(true);
+    slugState.normalized = normalized;
+    if (input.value.trim() && slugifyClient(input.value) === normalized) {
+      input.value = normalized;
+    }
     feedback.className = 'slug-feedback is-available';
-    feedback.innerHTML = \`Available · <span class="preview">\${location.origin}/l/\${normalized}</span>\`;
+    feedback.innerHTML = \`Available on this site · <span class="preview">\${siteOrigin}/l/\${normalized}</span>\`;
     slugState.ready = true;
+    slugState.checking = false;
     refreshSubmit();
   }
+
   function setUnavailable(reason) {
     status.className = 'slug-status is-taken';
     status.innerHTML = ICON_X;
+    status.setAttribute('aria-label', reason);
+    setSlugFieldValid(false);
     feedback.className = 'slug-feedback is-taken';
     feedback.textContent = reason;
     slugState.ready = false;
+    slugState.checking = false;
+    slugState.normalized = '';
+    refreshSubmit();
+  }
+
+  function showSlugAvailable() {
+    if (!slugState.ready || !slugState.normalized) return;
+    feedback.className = 'slug-feedback is-available';
+    feedback.innerHTML = \`Available on this site · <span class="preview">\${siteOrigin}/l/\${slugState.normalized}</span>\`;
+  }
+
+  function syncUrlField() {
+    const check = validateDestinationUrl(urlInput.value);
+    if (!urlInput.value.trim()) {
+      showSlugAvailable();
+      refreshSubmit();
+      return;
+    }
+    if (!check.ok) {
+      feedback.className = 'slug-feedback is-taken';
+      feedback.textContent = check.reason;
+      refreshSubmit();
+      return;
+    }
+    showSlugAvailable();
     refreshSubmit();
   }
 
   let abortCtrl = null;
   let debounceTimer = null;
   let lastQuery = '';
-  input.addEventListener('input', () => {
+  let pendingSubmit = false;
+
+  function submitAfterCheckIfReady() {
+    if (!pendingSubmit) return;
+    const urlCheck = validateDestinationUrl(urlInput.value);
+    if (!slugState.ready || slugState.checking || !slugState.normalized || !urlCheck.ok) return;
+    pendingSubmit = false;
+    input.value = slugState.normalized;
+    prepareDestinationUrlInput(urlInput);
+    form.submit();
+  }
+
+  function runSlugCheck(raw) {
+    const trimmed = raw.trim();
+    if (!trimmed) { setIdle(); return; }
+    const normalized = slugifyClient(trimmed);
+    if (!normalized) {
+      setUnavailable('Enter a link name (letters and numbers).');
+      return;
+    }
+    if (normalized.length < 2) {
+      setUnavailable('Link name must be at least 2 characters.');
+      return;
+    }
+    if (abortCtrl) abortCtrl.abort();
+    abortCtrl = new AbortController();
+    setChecking();
+    fetch(\`\${siteOrigin}/api/check?slug=\${encodeURIComponent(trimmed)}\`, { signal: abortCtrl.signal })
+      .then(r => {
+        if (!r.ok) throw new Error('check failed');
+        return r.json();
+      })
+      .then(j => {
+        if (trimmed !== lastQuery.trim()) return;
+        if (j.available) {
+          setAvailable(j.normalized || normalized);
+          submitAfterCheckIfReady();
+        } else {
+          pendingSubmit = false;
+          setUnavailable(j.reason || 'That name is already taken on this site.');
+        }
+      })
+      .catch(err => {
+        if (err.name === 'AbortError') return;
+        pendingSubmit = false;
+        slugState.checking = false;
+        setSlugFieldValid(false);
+        feedback.className = 'slug-feedback is-taken';
+        feedback.textContent = 'Could not verify name. Check your connection and try again.';
+        refreshSubmit();
+      });
+  }
+
+  function queueSlugCheck() {
     const v = input.value;
     lastQuery = v;
     clearTimeout(debounceTimer);
     if (!v.trim()) { setIdle(); return; }
-    debounceTimer = setTimeout(() => {
-      if (abortCtrl) abortCtrl.abort();
-      abortCtrl = new AbortController();
-      setChecking();
-      fetch(\`/api/check?slug=\${encodeURIComponent(v)}\`, { signal: abortCtrl.signal })
-        .then(r => r.json())
-        .then(j => {
-          if (v !== lastQuery) return;
-          if (j.available) setAvailable(j.normalized);
-          else setUnavailable(j.reason || 'Not available.');
-        })
-        .catch(err => { if (err.name !== 'AbortError') setIdle(); });
-    }, 250);
+    debounceTimer = setTimeout(() => runSlugCheck(v), 200);
+  }
+
+  input.addEventListener('input', queueSlugCheck);
+  input.addEventListener('blur', () => runSlugCheck(input.value));
+
+  function onUrlChange() {
+    syncUrlField();
+  }
+
+  urlInput.addEventListener('input', onUrlChange);
+  urlInput.addEventListener('change', onUrlChange);
+
+  form.addEventListener('submit', (e) => {
+    const urlCheck = validateDestinationUrl(urlInput.value);
+    if (slugState.checking) {
+      e.preventDefault();
+      pendingSubmit = true;
+      feedback.className = 'slug-feedback is-taken';
+      feedback.textContent = 'Checking this name on the site…';
+      return;
+    }
+    if (!slugState.ready || !slugState.normalized) {
+      e.preventDefault();
+      pendingSubmit = true;
+      runSlugCheck(input.value);
+      feedback.className = 'slug-feedback is-taken';
+      feedback.textContent = 'Checking this name on the site…';
+      return;
+    }
+    if (!urlCheck.ok) {
+      e.preventDefault();
+      pendingSubmit = false;
+      feedback.className = 'slug-feedback is-taken';
+      feedback.textContent = urlCheck.reason;
+      return;
+    }
+    pendingSubmit = false;
+    input.value = slugState.normalized;
+    prepareDestinationUrlInput(urlInput);
   });
+
+  if (input.value.trim()) queueSlugCheck();
   refreshSubmit();
-`;
+  })();`;
 }
 
 function headHtml(title: string, origin = ''): string {
@@ -270,7 +504,7 @@ function landingStyles(): string {
   --logo-bg: #eef2ff;
   --logo-ink: #0b0b0c;
   --logo-accent: #2563eb;
-  --hero-display: clamp(2.5rem, 7vw, 4.25rem);
+  --hero-display: clamp(2.4rem, 5.6vw, 3.7rem);
   --link-bar-height: 56px;
 }
 * { box-sizing: border-box; }
@@ -329,7 +563,7 @@ body.landing {
 .landing-main {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 32px clamp(20px, 4vw, 48px) 72px;
+  padding: 20px clamp(20px, 4vw, 48px) 72px;
   width: 100%;
 }
 .hero-center {
@@ -339,19 +573,27 @@ body.landing {
   align-items: center;
   width: 100%;
 }
+.hero-kicker {
+  margin: 0 0 12px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .hero-center h1 {
   font-size: var(--hero-display);
   line-height: 1.05;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.02em;
   font-weight: 650;
-  margin: 0 0 20px;
+  margin: 0 0 18px;
 }
 .hero-accent { color: var(--accent); }
 .hero-lede {
-  font-size: clamp(1rem, 2vw, 1.125rem);
+  font-size: 1rem;
   color: var(--ink-soft);
-  margin: 0 0 36px;
-  max-width: 44rem;
+  margin: 0 0 30px;
+  max-width: 46rem;
   line-height: 1.6;
 }
 .hero-lede code {
@@ -389,6 +631,12 @@ body.landing {
   min-width: 140px;
   position: relative;
   padding-left: 20px;
+  padding-right: 4px;
+  transition: box-shadow 160ms ease, background 160ms ease;
+}
+.link-bar-slug.is-valid {
+  box-shadow: inset 3px 0 0 var(--success);
+  background: linear-gradient(90deg, rgba(21, 128, 61, .04) 0%, transparent 55%);
 }
 .link-bar-prefix {
   font-size: 17px;
@@ -406,7 +654,7 @@ body.landing {
   font: inherit;
   font-size: 18px;
   color: var(--ink);
-  padding: 16px 36px 16px 0;
+  padding: 16px 44px 16px 0;
   outline: none;
 }
 .link-bar-slug input::placeholder { color: var(--ink-faint); }
@@ -440,26 +688,31 @@ body.landing {
   cursor: pointer;
   transition: background 140ms ease;
 }
-.link-bar-submit:hover:not(:disabled) { background: #222; }
-.link-bar-submit:disabled {
-  background: var(--ink-faint);
-  cursor: not-allowed;
-}
+.link-bar-submit { background: var(--ink-faint); cursor: pointer; }
+.link-bar-submit.is-ready { background: var(--ink); }
+.link-bar-submit.is-ready:hover { background: #222; }
+.link-bar-submit[aria-disabled="true"] { cursor: default; opacity: .85; }
 .slug-status {
   position: absolute;
-  right: 8px;
+  right: 10px;
   top: 50%;
   transform: translateY(-50%);
-  width: 20px;
-  height: 20px;
+  width: 28px;
+  height: 28px;
   opacity: 0;
+  pointer-events: none;
   display: flex;
   align-items: center;
   justify-content: center;
 }
-.slug-status.is-checking { opacity: .6; }
-.slug-status.is-available { opacity: 1; color: var(--success); }
-.slug-status.is-taken { opacity: 1; color: var(--danger); }
+.slug-status svg { width: 100%; height: 100%; }
+.slug-status.is-checking { opacity: .55; color: var(--ink-faint); }
+.slug-status.is-available {
+  opacity: 1;
+  color: var(--success);
+  filter: drop-shadow(0 0 6px rgba(21, 128, 61, .35));
+}
+.slug-status.is-taken { opacity: 1; color: var(--danger); width: 20px; height: 20px; right: 12px; }
 .slug-feedback {
   font-size: 13px;
   min-height: 20px;
@@ -482,24 +735,20 @@ body.landing {
   padding: 2px 6px;
   border-radius: 4px;
 }
-.github-cta {
-  display: inline-flex;
-  align-items: center;
+.trust-row {
+  display: flex;
+  justify-content: center;
   gap: 10px;
+  flex-wrap: wrap;
   margin-top: 8px;
-  padding: 12px 20px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.trust-row span {
   border: 1px solid var(--rule);
   border-radius: 999px;
-  background: var(--surface);
-  color: var(--ink);
-  text-decoration: none;
-  font-size: 15px;
-  font-weight: 600;
-  box-shadow: 0 1px 3px rgba(0,0,0,.06);
-}
-.github-cta:hover {
-  border-color: var(--ink-faint);
-  box-shadow: 0 4px 12px rgba(0,0,0,.08);
+  background: rgba(255,255,255,.68);
+  padding: 7px 11px;
 }
 .activate-block {
   width: 100%;
@@ -521,7 +770,39 @@ body.landing {
   font-size: 15px;
 }
 .link-preview-url { word-break: break-all; }
-.link-preview-arrow { color: var(--ink-faint); }
+.link-preview-check {
+  color: var(--success);
+  font-size: 18px;
+  font-weight: 700;
+}
+.activate-url-label {
+  display: block;
+  width: 100%;
+  max-width: 560px;
+  margin: 0 auto 8px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+.activate-url-input {
+  display: block;
+  width: 100%;
+  margin-top: 6px;
+  min-height: var(--link-bar-height);
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  padding: 16px 20px;
+  font: inherit;
+  font-size: 17px;
+  background: var(--surface);
+  box-shadow: 0 2px 8px rgba(32, 33, 36, .1);
+  outline: none;
+}
+.activate-url-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--focus);
+}
 .activate-bar {
   display: flex;
   width: 100%;
@@ -616,7 +897,30 @@ body.landing {
   text-align: left;
 }
 .reserved-strip h3 { margin: 0 0 12px; font-size: 14px; }
-.reserved-strip ul { margin: 0; padding-left: 18px; color: var(--ink-soft); font-size: 14px; }
+.reserved-strip ul {
+  margin: 0;
+  padding-left: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  list-style: none;
+  display: grid;
+  gap: 8px;
+}
+.reserved-strip li {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.reserved-strip li code,
+.reserved-strip li .muted {
+  overflow-wrap: anywhere;
+}
+.reserved-check {
+  color: var(--success);
+  font-weight: 700;
+  flex: 0 0 auto;
+}
 .site-footer {
   max-width: 1280px;
   margin: 0 auto;

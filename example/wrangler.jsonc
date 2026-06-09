@@ -1,22 +1,18 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "openly",
-  "account_id": "04b10da5b2c496a790ebb3f60bfe1b18",
   "compatibility_date": "2026-03-01",
   "compatibility_flags": ["nodejs_compat"],
   "main": "./src/index.ts",
   "d1_databases": [
     {
       "binding": "OPENLY",
-      "database_name": "openly-db",
-      "database_id": ""
+      "database_name": "openly-db"
     }
   ],
   "kv_namespaces": [
     {
-      "binding": "PENDING",
-      "id": "00c4344b8e8b4107b614f9270fb5ee02",
-      "preview_id": "9163bf535b6e49d0a49a139ad49fa76b"
+      "binding": "PENDING"
     }
   ],
   "send_email": [

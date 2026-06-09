@@ -64,6 +64,24 @@ test('validateUrl: accepts https', () => {
   assert.equal(result.ok, true);
 });
 
+test('validateUrl: adds https when scheme omitted', () => {
+  const result = validateUrl('company.com/docs');
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.url, 'https://company.com/docs');
+});
+
+test('validateUrl: accepts explicit https', () => {
+  const result = validateUrl('https://mysite.com');
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.url, 'https://mysite.com/');
+});
+
+test('validateUrl: accepts explicit http', () => {
+  const result = validateUrl('http://mysite.com');
+  assert.equal(result.ok, true);
+  if (result.ok) assert.equal(result.url, 'http://mysite.com/');
+});
+
 test('validateUrl: accepts http', () => {
   const result = validateUrl('http://example.com');
   assert.equal(result.ok, true);

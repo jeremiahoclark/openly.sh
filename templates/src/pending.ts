@@ -22,7 +22,10 @@ export interface PendingEnv {
 
 type D1SlugLookup = {
   prepare(query: string): {
-    bind(...values: unknown[]): { first<T>(): Promise<T | null> };
+    bind(...values: unknown[]): {
+      first<T>(): Promise<T | null>;
+      run(): Promise<unknown>;
+    };
   };
 };
 
@@ -83,7 +86,7 @@ export async function listPendingForGuest(env: PendingEnv, guestId: string): Pro
   const links: PendingLink[] = [];
   for (const slug of slugs) {
     const link = await getPendingBySlug(env, slug);
-    if (link) links.push(link);
+    if (link?.guestId === guestId) links.push(link);
   }
   return links.sort((a, b) => b.createdAt - a.createdAt);
 }
@@ -112,10 +115,24 @@ export async function createPendingLink(
 
   const now = Date.now();
   const link: PendingLink = { slug, url, guestId, createdAt: now };
-  await env.PENDING.put(slugKey(slug), JSON.stringify(link), { expirationTtl: PENDING_TTL_SEC });
   const slugs = [...existing.map((l) => l.slug), slug];
   await env.PENDING.put(guestKey(guestId), JSON.stringify(slugs), { expirationTtl: PENDING_TTL_SEC });
+  await env.PENDING.put(slugKey(slug), JSON.stringify(link), { expirationTtl: PENDING_TTL_SEC });
   return { ok: true, link };
+}
+
+export async function updatePendingLinkUrl(
+  env: PendingEnv,
+  guestId: string,
+  slug: string,
+  url: string,
+): Promise<{ ok: true; link: PendingLink } | { ok: false; reason: string }> {
+  const link = await getPendingBySlug(env, slug);
+  if (!link) return { ok: false, reason: 'Link not found.' };
+  if (link.guestId !== guestId) return { ok: false, reason: 'Link not found.' };
+  const updated: PendingLink = { ...link, url };
+  await env.PENDING.put(slugKey(slug), JSON.stringify(updated), { expirationTtl: PENDING_TTL_SEC });
+  return { ok: true, link: updated };
 }
 
 export async function associateMagicLinkGuest(
@@ -135,11 +152,7 @@ export async function consumeMagicLinkGuest(env: PendingEnv, tokenHash: string):
 
 export async function migratePendingToAccount(
   env: PendingEnv,
-  db: D1SlugLookup & {
-    prepare(query: string): {
-      bind(...values: unknown[]): { run(): Promise<unknown> };
-    };
-  },
+  db: D1SlugLookup,
   guestId: string,
   accountId: string,
   linkLimit: number,
@@ -159,6 +172,7 @@ export async function migratePendingToAccount(
   for (const link of pending) {
     if (activeCount >= linkLimit) {
       skipped.push(link.slug);
+      await deletePendingSlugIfOwned(env, link.slug, guestId);
       continue;
     }
 
@@ -167,7 +181,7 @@ export async function migratePendingToAccount(
       const stillPending = await getPendingBySlug(env, link.slug);
       if (!stillPending || stillPending.guestId !== guestId) {
         skipped.push(link.slug);
-        await env.PENDING.delete(slugKey(link.slug));
+        if (!stillPending) await env.PENDING.delete(slugKey(link.slug));
         continue;
       }
     }
@@ -177,11 +191,23 @@ export async function migratePendingToAccount(
       .bind(link.slug)
       .first<{ slug: string }>();
 
-    if (!inDb) {
+    if (inDb) {
+      skipped.push(link.slug);
+      await deletePendingSlugIfOwned(env, link.slug, guestId);
+      continue;
+    }
+
+    let insertedSlug = false;
+    try {
       await db
         .prepare('INSERT INTO slugs (slug, url, created_at) VALUES (?, ?, ?)')
         .bind(link.slug, link.url, link.createdAt)
         .run();
+      insertedSlug = true;
+    } catch {
+      skipped.push(link.slug);
+      await deletePendingSlugIfOwned(env, link.slug, guestId);
+      continue;
     }
 
     try {
@@ -194,12 +220,30 @@ export async function migratePendingToAccount(
       activeCount += 1;
       migrated.push(link.slug);
     } catch {
+      if (insertedSlug) await deleteSlugIfUnowned(db, link.slug);
       skipped.push(link.slug);
     }
 
-    await env.PENDING.delete(slugKey(link.slug));
+    await deletePendingSlugIfOwned(env, link.slug, guestId);
   }
 
   await env.PENDING.delete(guestKey(guestId));
   return { migrated, skipped };
+}
+
+async function deletePendingSlugIfOwned(env: PendingEnv, slug: string, guestId: string): Promise<void> {
+  const pending = await getPendingBySlug(env, slug);
+  if (pending?.guestId === guestId) {
+    await env.PENDING.delete(slugKey(slug));
+  }
+}
+
+async function deleteSlugIfUnowned(db: D1SlugLookup, slug: string): Promise<void> {
+  const owner = await db
+    .prepare('SELECT slug FROM link_accounts WHERE slug = ?')
+    .bind(slug)
+    .first<{ slug: string }>();
+  if (!owner) {
+    await db.prepare('DELETE FROM slugs WHERE slug = ?').bind(slug).run();
+  }
 }

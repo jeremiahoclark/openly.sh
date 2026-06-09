@@ -26,15 +26,8 @@ export function validateSlug(input: string): SlugValidation {
   return { ok: true, slug };
 }
 
+import { validateDestinationUrl } from './urlField.ts';
+
 export function validateUrl(input: string): { ok: true; url: string } | { ok: false; reason: string } {
-  let parsed: URL;
-  try {
-    parsed = new URL(input);
-  } catch {
-    return { ok: false, reason: 'Destination must be a valid URL (include https://).' };
-  }
-  if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
-    return { ok: false, reason: 'Destination must use http or https.' };
-  }
-  return { ok: true, url: parsed.toString() };
+  return validateDestinationUrl(input);
 }

@@ -158,7 +158,7 @@ Set:
 This repo (`openly.sh`) ships:
 
 - `bin/cli.mjs` — the `npx create-openly` CLI. Zero runtime deps.
-- `templates/` — files copied into the user's project, with `{{PROJECT_NAME}}`, `{{DB_NAME}}`, `{{DB_DATABASE_ID}}` placeholders.
+- `templates/` — files copied into the user's project, with `{{PROJECT_NAME}}`, `{{DB_NAME}}`, `{{DB_DATABASE_ID}}`, and `{{KV_NAMESPACE_ID}}` placeholders.
 - `example/` — a concrete, deployable rendering of the templates. Targeted by the Deploy-to-Cloudflare button.
 
 ## License
