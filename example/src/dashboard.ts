@@ -91,7 +91,7 @@ export function renderDashboard(
 ): string {
   const tableRows = rows.length
     ? rows.map(rowHtml).join('\n')
-    : `<tr><td colspan="4" class="empty">No links yet.</td></tr>`;
+    : `<tr><td colspan="4" class="empty">No links yet — create your first one above.</td></tr>`;
 
   const filterOptions = [
     `<option value="" ${slugFilter ? '' : 'selected'}>All links</option>`,
@@ -907,6 +907,8 @@ td.num { text-align: right; font-variant-numeric: tabular-nums; font-weight: 500
 .copy-btn.is-copied .icon-copy { display: none; }
 .copy-btn.is-copied .icon-check { display: block; }
 .dest { color: var(--ink-soft); word-break: break-all; font-size: 13px; max-width: 360px; }
+.dest a { color: inherit; text-decoration: none; }
+.dest a:hover { color: var(--accent); text-decoration: underline; }
 .empty { text-align: center; color: var(--ink-soft); padding: 32px 16px; }
 .archive-form { margin: 0; }
 .account-panel {
@@ -1074,10 +1076,10 @@ function rowHtml(row: SlugRow): string {
         </button>
       </div>
     </td>
-    <td class="dest">${escapeHtml(row.url)}</td>
+    <td class="dest"><a href="${escapeHtml(row.url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(row.url)}</a></td>
     <td class="num">${row.clicks}</td>
     <td>
-      <form class="archive-form" method="post" action="/api/slugs/${encodeURIComponent(row.slug)}/archive">
+      <form class="archive-form" method="post" action="/api/slugs/${encodeURIComponent(row.slug)}/archive" onsubmit="return confirm('Archive ${slug}? Its short link will stop redirecting.')">
         <button type="submit" class="ghost-button ghost-button--danger">Archive</button>
       </form>
     </td>
