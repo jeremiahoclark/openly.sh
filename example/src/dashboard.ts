@@ -67,7 +67,8 @@ ${headHtml(`${BRAND} - check your email`)}
     <p class="subtitle">We sent a sign-in link to <strong>${escapeHtml(result.email)}</strong>.</p>
     ${
       result.devLink
-        ? `<p class="flash is-dev">Email is not configured. Dev link: <a href="${escapeHtml(result.devLink)}">${escapeHtml(result.devLink)}</a></p>`
+        ? `<p class="flash is-dev">Email isn't set up on this deployment yet, so sign in with this link directly:<br><a href="${escapeHtml(result.devLink)}">${escapeHtml(result.devLink)}</a></p>
+    <p class="note">To send real emails: enable Cloudflare Email Routing for your sender domain, then set <code>EMAIL_FROM</code> in <code>wrangler.jsonc</code> and redeploy. Details in the README.</p>`
         : ''
     }
     <p class="note">Magic links expire after 15 minutes.</p>

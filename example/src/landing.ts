@@ -26,8 +26,60 @@ export type LandingOpts = {
   migratedCount?: number;
 };
 
+function siteNavHtml(): string {
+  return `<header class="site-nav">
+  <a class="nav-brand" href="/">${brandLogoSvg(48)}<span>${escapeHtml(BRAND)}</span></a>
+  <div class="nav-actions">
+    <a class="nav-github" href="${GITHUB_REPO}" target="_blank" rel="noopener noreferrer">${githubIcon()} Star on GitHub</a>
+    <a class="nav-link" href="/signin">Sign in</a>
+  </div>
+</header>`;
+}
+
+function siteFooterHtml(): string {
+  return `<footer class="site-footer">
+  <p>Free: ${FREE_LINK_LIMIT} active links · Pro included for new accounts · <a href="${GITHUB_REPO}">openly.sh on GitHub</a></p>
+</footer>`;
+}
+
+// Focused activation step shown right after a link is reserved: just the
+// reserved link and the sign-in form, no hero or marketing sections.
+function renderActivate(created: PendingLink, opts: LandingOpts): string {
+  const shortUrl = `${opts.origin}/l/${created.slug}`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+${headHtml(`${BRAND} — activate your link`, opts.origin)}
+</head>
+<body class="landing">
+${siteNavHtml()}
+
+<main class="landing-main gate-main">
+  <section class="hero-center">
+    <p class="hero-kicker">Link reserved</p>
+    <h1>Sign in to make it live</h1>
+    <div class="link-preview">
+      <code class="link-preview-url">${escapeHtml(shortUrl)}</code>
+      <span class="link-preview-check" aria-hidden="true">✓</span>
+    </div>
+    <p class="hero-lede">Redirects to <span class="muted">${escapeHtml(created.url)}</span></p>
+    ${opts.error ? `<p class="flash is-error">${escapeHtml(opts.error)}</p>` : ''}
+    <form class="activate-bar" method="post" action="/auth/magic-link">
+      <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" autofocus aria-label="Email">
+      <button type="submit" class="btn-primary">Send magic link</button>
+    </form>
+    <p class="hint">No password. Your link attaches to this account when you verify email.</p>
+    <a class="text-link" href="/">Create another link</a>
+  </section>
+</main>
+
+${siteFooterHtml()}
+</body>
+</html>`;
+}
+
 export function renderLanding(opts: LandingOpts): string {
-  const shortUrl = opts.created ? `${opts.origin}/l/${opts.created.slug}` : '';
+  if (opts.created) return renderActivate(opts.created, opts);
   const reservedList =
     opts.reserved && opts.reserved.length > 0
       ? opts.reserved
@@ -44,13 +96,7 @@ export function renderLanding(opts: LandingOpts): string {
 ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
 </head>
 <body class="landing">
-<header class="site-nav">
-  <a class="nav-brand" href="/">${brandLogoSvg(48)}<span>${escapeHtml(BRAND)}</span></a>
-  <div class="nav-actions">
-    <a class="nav-github" href="${GITHUB_REPO}" target="_blank" rel="noopener noreferrer">${githubIcon()} Star on GitHub</a>
-    <a class="nav-link" href="/signin">Sign in</a>
-  </div>
-</header>
+${siteNavHtml()}
 
 <main class="landing-main">
   <section class="hero-center">
@@ -61,26 +107,7 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
     ${opts.welcome ? `<p class="flash is-ok">Welcome back.${opts.migratedCount ? ` ${opts.migratedCount} link${opts.migratedCount === 1 ? '' : 's'} activated.` : ''}</p>` : ''}
     ${opts.error ? `<p class="flash is-error">${escapeHtml(opts.error)}</p>` : ''}
 
-    ${
-      opts.created
-        ? `<div class="activate-block">
-      <p class="activate-lead">Link reserved. Sign in with a magic link to make it live.</p>
-      <div class="link-preview">
-        <code class="link-preview-url">${escapeHtml(shortUrl)}</code>
-        <span class="link-preview-check" aria-hidden="true">✓</span>
-      </div>
-      <label class="activate-url-label">Destination
-        <input type="text" class="activate-url-input" id="activate-url-input" value="${escapeHtml(opts.created.url)}" inputmode="url" autocomplete="off" aria-label="Destination URL">
-      </label>
-      <p id="activate-url-feedback" class="slug-feedback" aria-live="polite"></p>
-      <form class="activate-bar" method="post" action="/auth/magic-link">
-        <input type="email" name="email" placeholder="you@example.com" required autocomplete="email" aria-label="Email">
-        <button type="submit" class="btn-primary">Send magic link</button>
-      </form>
-      <p class="hint">No password. Your link attaches to this account when you verify email.</p>
-      <a class="text-link" href="/">Create another link</a>
-    </div>`
-        : `<form class="link-bar-form" id="openly-landing-form" method="post" action="/api/pending">
+    <form class="link-bar-form" id="openly-landing-form" method="post" action="/api/pending">
       <div class="link-bar" role="group" aria-label="Create a short link">
         <div class="link-bar-slug" id="slug-field">
           <span class="link-bar-prefix" aria-hidden="true">/l/</span>
@@ -93,8 +120,7 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
       </div>
       <p id="slug-feedback" class="slug-feedback" aria-live="polite"></p>
     </form>
-    <p class="hint"><code>data report 1</code> becomes <code>data-report-1</code>. Bare domains are normalized to HTTPS. Reserved links go live after sign-in.</p>`
-    }
+    <p class="hint"><code>data report 1</code> becomes <code>data-report-1</code>. Bare domains are normalized to HTTPS. Reserved links go live after sign-in.</p>
 
     <div class="trust-row" aria-label="Product details">
       <span>No password</span>
@@ -128,12 +154,10 @@ ${headHtml(`${BRAND} — short links for developers`, opts.origin)}
   </section>
 </main>
 
-<footer class="site-footer">
-  <p>Free: ${FREE_LINK_LIMIT} active links · Pro included for new accounts · <a href="${GITHUB_REPO}">openly.sh on GitHub</a></p>
-</footer>
+${siteFooterHtml()}
 
 <script>
-${opts.created ? activateUrlScript(opts.created.slug) : landingSlugScript()}
+${landingSlugScript()}
 </script>
 </body>
 </html>`;
@@ -151,13 +175,7 @@ export function renderPendingGate(opts: {
 ${headHtml(`${BRAND} — activate link`, opts.origin)}
 </head>
 <body class="landing">
-<header class="site-nav">
-  <a class="nav-brand" href="/">${brandLogoSvg(48)}<span>${escapeHtml(BRAND)}</span></a>
-  <div class="nav-actions">
-    <a class="nav-github" href="${GITHUB_REPO}" target="_blank" rel="noopener noreferrer">${githubIcon()} Star on GitHub</a>
-    <a class="nav-link" href="/signin">Sign in</a>
-  </div>
-</header>
+${siteNavHtml()}
 <main class="landing-main gate-main">
   <section class="hero-center">
     <h1>This link is reserved</h1>
@@ -171,83 +189,6 @@ ${headHtml(`${BRAND} — activate link`, opts.origin)}
 </main>
 </body>
 </html>`;
-}
-
-function activateUrlScript(slug: string): string {
-  const slugJson = JSON.stringify(slug);
-  return `(function() {
-  ${destinationUrlClientHelpers()}
-  (function() {
-    const input = document.getElementById('activate-url-input');
-    const feedback = document.getElementById('activate-url-feedback');
-    if (!input || !feedback) return;
-    const slug = ${slugJson};
-    let lastSaved = input.value;
-    let saveTimer = null;
-
-    function showSaved(url) {
-      feedback.className = 'slug-feedback is-available';
-      feedback.textContent = 'Destination saved';
-      lastSaved = url;
-    }
-
-    function showError(reason) {
-      feedback.className = 'slug-feedback is-taken';
-      feedback.textContent = reason;
-    }
-
-    async function save() {
-      const check = validateDestinationUrl(input.value);
-      if (!check.ok) {
-        showError(check.reason);
-        return;
-      }
-      const display = displayDestinationUrl(check.url, input.value);
-      if (document.activeElement !== input) input.value = display;
-      if (display === lastSaved) return;
-      try {
-        const res = await fetch(\`/api/pending/\${encodeURIComponent(slug)}\`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: check.url }),
-        });
-        const body = await res.json().catch(() => ({}));
-        if (!res.ok) {
-          showError(body.error || 'Could not save destination.');
-          return;
-        }
-        showSaved(body.url || check.url);
-      } catch {
-        showError('Could not save destination.');
-      }
-    }
-
-    function queueSave() {
-      clearTimeout(saveTimer);
-      saveTimer = setTimeout(() => { void save(); }, 400);
-    }
-
-    input.addEventListener('blur', () => {
-      const check = validateDestinationUrl(input.value);
-      if (check.ok) input.value = displayDestinationUrl(check.url, input.value);
-      void save();
-    });
-    input.addEventListener('input', () => {
-      const check = validateDestinationUrl(input.value);
-      if (!input.value.trim()) {
-        feedback.className = 'slug-feedback';
-        feedback.textContent = '';
-        return;
-      }
-      if (!check.ok) showError(check.reason);
-      else {
-        feedback.className = 'slug-feedback';
-        feedback.textContent = '';
-      }
-      queueSave();
-    });
-  })();
-  })();`;
 }
 
 function landingSlugScript(): string {
@@ -750,16 +691,6 @@ body.landing {
   background: rgba(255,255,255,.68);
   padding: 7px 11px;
 }
-.activate-block {
-  width: 100%;
-  max-width: 800px;
-  margin: 0 auto 24px;
-}
-.activate-lead {
-  color: var(--ink-soft);
-  margin: 0 0 16px;
-  font-size: 1.05rem;
-}
 .link-preview {
   display: flex;
   flex-wrap: wrap;
@@ -774,34 +705,6 @@ body.landing {
   color: var(--success);
   font-size: 18px;
   font-weight: 700;
-}
-.activate-url-label {
-  display: block;
-  width: 100%;
-  max-width: 560px;
-  margin: 0 auto 8px;
-  text-align: left;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink-soft);
-}
-.activate-url-input {
-  display: block;
-  width: 100%;
-  margin-top: 6px;
-  min-height: var(--link-bar-height);
-  border: 1px solid var(--rule);
-  border-radius: 16px;
-  padding: 16px 20px;
-  font: inherit;
-  font-size: 17px;
-  background: var(--surface);
-  box-shadow: 0 2px 8px rgba(32, 33, 36, .1);
-  outline: none;
-}
-.activate-url-input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 3px var(--focus);
 }
 .activate-bar {
   display: flex;
