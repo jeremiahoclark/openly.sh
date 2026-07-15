@@ -1,6 +1,22 @@
-// Slugs live under /l/* so they don't collide with app routes — this set just
-// blocks confusing words inside that namespace.
-export const RESERVED_SLUGS = new Set(['api', 'admin', 'auth', 'signin', 'logout', '_health']);
+// Slugs are served at the site root (openly.sh/<slug>), so they share the
+// namespace with every top-level app route. This set blocks any slug that would
+// shadow or be confused with a real path the worker serves at root — keep it in
+// sync with the routes in router.ts.
+export const RESERVED_SLUGS = new Set([
+  'l',
+  'api',
+  'admin',
+  'auth',
+  'signin',
+  'logout',
+  'www',
+  '_health',
+  'favicon.ico',
+  'favicon.svg',
+  'og-card.svg',
+  'robots.txt',
+  'sitemap.xml',
+]);
 
 export const SLUG_MAX_LENGTH = 80;
 

@@ -260,6 +260,8 @@ async function sendMagicLink(email: string, verifyUrl: string, env: AuthEnv): Pr
   }
 
   const from = parseEmailAddress(env.EMAIL_FROM);
+  const fromEmail = typeof from === 'string' ? from : from.email;
+  const senderDomain = fromEmail.includes('@') ? fromEmail.slice(fromEmail.lastIndexOf('@') + 1) : fromEmail;
   const subject = 'Sign in to Openly';
   const text = [
     'Use this link to sign in to Openly:',
@@ -273,6 +275,9 @@ async function sendMagicLink(email: string, verifyUrl: string, env: AuthEnv): Pr
     '<p>This link expires in 15 minutes. If you did not request it, you can ignore this email.</p>',
   ].join('');
 
+  // Cloudflare Email Service exposes the structured send() builder on the
+  // `send_email` binding. It delivers to arbitrary recipients (Workers Paid),
+  // but only once the sender domain has been onboarded to Email Sending.
   try {
     await env.EMAIL.send({
       from,
@@ -282,7 +287,17 @@ async function sendMagicLink(email: string, verifyUrl: string, env: AuthEnv): Pr
       text,
     });
   } catch (err) {
-    throw new AuthError(`Could not send magic link email. ${err instanceof Error ? err.message : String(err)}`, 502);
+    const detail = err instanceof Error ? err.message : String(err);
+    const code = err && typeof err === 'object' && 'code' in err ? String((err as { code: unknown }).code) : null;
+    throw new AuthError(
+      `Could not send the magic link email${code ? ` (code ${code})` : ''}: ${detail}. ` +
+        `Most likely the sender domain "${senderDomain}" has not been onboarded and verified in ` +
+        `Cloudflare Email Service (dashboard: Compute -> Email Service -> Email Sending -> Onboard Domain, ` +
+        `then confirm the SPF/DKIM/DMARC DNS records), or this Worker is on the Free plan ` +
+        `(sending to arbitrary recipients requires Workers Paid). ` +
+        `Until that is fixed, remove EMAIL_FROM to fall back to on-screen dev links.`,
+      502,
+    );
   }
 }
 

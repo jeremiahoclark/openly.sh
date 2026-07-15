@@ -105,6 +105,16 @@ function parseArgs(argv) {
   return args;
 }
 
+// Pull the bare domain out of an EMAIL_FROM value like `Openly <links@example.com>`
+// or `links@example.com` — that domain is what must be onboarded to Email Service.
+function senderDomainFrom(emailFrom) {
+  if (!emailFrom) return null;
+  const angle = emailFrom.match(/<([^>]+)>/);
+  const addr = (angle ? angle[1] : emailFrom).trim();
+  const at = addr.lastIndexOf('@');
+  return at === -1 ? null : addr.slice(at + 1).toLowerCase();
+}
+
 function slugifyName(input) {
   return String(input)
     .toLowerCase()
@@ -367,6 +377,8 @@ async function main() {
   if (!emailFrom) {
     warn('Magic-link email is not configured yet.');
     warn('Until EMAIL_FROM is set, sign-in requests show a development link instead of sending email.');
+  } else {
+    ok('EMAIL_FROM written and the `send_email` binding (Cloudflare Email Service) is wired in wrangler.jsonc.');
   }
 
   // 14) Success
@@ -390,7 +402,23 @@ ${c.green}${c.bold}✓ Done.${c.reset}
   if (!emailFrom) {
     log(`${c.yellow}Email:${c.reset} set up Cloudflare Email Service when you are ready:`);
     log(`  ${c.dim}cd ${projectName}${c.reset}`);
-    log(`  Add EMAIL_FROM to wrangler.jsonc vars, enable Cloudflare Email Service for the sender domain, then redeploy.\n`);
+    log(`  1. Add ${c.bold}EMAIL_FROM${c.reset} (e.g. "Openly <links@yourdomain.com>") to the vars block in wrangler.jsonc.`);
+    log(`  2. Onboard that sender domain in the Cloudflare dashboard (one manual step — see below).`);
+    log(`  3. ${c.dim}npm run deploy${c.reset}\n`);
+  } else {
+    const senderDomain = senderDomainFrom(emailFrom);
+    // Everything the CLI can automate is done: the send_email binding is in
+    // wrangler.jsonc, EMAIL_FROM is set, and the worker is deployed. Domain
+    // onboarding is dashboard-only (no public API / wrangler command), so it is
+    // the single remaining manual step. Name the exact domain and path.
+    log(`${c.yellow}${c.bold}One manual step left — enable email delivery:${c.reset}`);
+    log(`  Onboard ${c.bold}${senderDomain || 'your sender domain'}${c.reset} to Cloudflare Email Service so magic links can send:`);
+    log(`    1. Dashboard -> ${c.cyan}Compute -> Email Service -> Email Sending -> Onboard Domain${c.reset}.`);
+    log(`    2. Pick ${c.bold}${senderDomain || 'your domain'}${c.reset} and confirm the SPF / DKIM / DMARC DNS records Cloudflare shows.`);
+    log(`    3. Wait for verification (usually 5-15 min on Cloudflare-hosted domains).`);
+    log(`  ${c.dim}Domain onboarding has no public API/wrangler command, so it can't be automated.${c.reset}`);
+    log(`  ${c.dim}Note: sending to arbitrary recipients requires the Workers Paid plan.${c.reset}`);
+    log(`  ${c.dim}Until the domain is verified, sign-in shows an on-screen dev link instead of emailing.${c.reset}\n`);
   }
 
   if (domain) {

@@ -190,7 +190,7 @@ ${dashboardStyles()}
       <span id="slug-feedback" class="slug-feedback" aria-live="polite"></span>
       <button type="submit" id="openly-submit" ${atLimit ? 'disabled' : ''}>Create link</button>
     </form>
-    <p class="note"><code>data report 1</code> becomes <code>data-report-1</code>. Link: <code>${escapeHtml(origin)}/l/data-report-1</code>.</p>
+    <p class="note"><code>data report 1</code> becomes <code>data-report-1</code>. Link: <code>${escapeHtml(origin)}/data-report-1</code>.</p>
   </section>
 
   <section class="card">
@@ -282,7 +282,7 @@ ${dashboardStyles()}
     btn.addEventListener('click', async () => {
       const slug = btn.getAttribute('data-slug');
       if (!slug) return;
-      const fullUrl = \`\${location.origin}/l/\${slug}\`;
+      const fullUrl = \`\${location.origin}/\${slug}\`;
       try {
         await navigator.clipboard.writeText(fullUrl);
       } catch {
@@ -344,7 +344,7 @@ ${dashboardStyles()}
       status.className = 'slug-status is-available';
       status.innerHTML = ICON_CHECK;
       feedback.className = 'slug-feedback is-available';
-      feedback.innerHTML = \`Available · Link: <span class="preview">\${location.origin}/l/\${normalized}</span>\`;
+      feedback.innerHTML = \`Available · Link: <span class="preview">\${location.origin}/\${normalized}</span>\`;
       slugState.ready = true;
       refreshSubmit();
     }
@@ -747,7 +747,7 @@ button:active { background: var(--accent-pressed); transform: translateY(1px); }
   border: 1px solid var(--rule);
   box-shadow: var(--shadow-sm);
 }
-.secondary-link:hover { background: var(--accent-soft); color: var(--accent-hover); border-color: rgba(37, 99, 235, .25); }
+.secondary-link:hover { background: var(--accent-soft); color: var(--accent-hover); border-color: rgba(232, 80, 15, .25); }
 @media (max-width: 520px) {
   body { padding: 28px 16px 72px; }
   .auth-shell { min-height: calc(100vh - 100px); display: block; }

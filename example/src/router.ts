@@ -63,6 +63,13 @@ export async function handleRequest(
 ): Promise<Response> {
   const url = new URL(request.url);
 
+  // Canonicalize the host: www.<domain> → apex, preserving path and query.
+  if (url.hostname.startsWith('www.')) {
+    const apex = new URL(url.toString());
+    apex.hostname = url.hostname.slice(4);
+    return Response.redirect(apex.toString(), 301);
+  }
+
   if (url.pathname === '/favicon.svg' || url.pathname === '/favicon.ico') {
     return svgResponse(renderFaviconSvg(), 31536000);
   }
@@ -73,7 +80,8 @@ export async function handleRequest(
 
   await ensureSchema(env);
 
-  // Canonical short redirect path.
+  // Legacy short redirect path. Canonical short links are now served at the
+  // root (/:slug); /l/:slug is kept working so old links keep redirecting.
   if (url.pathname.startsWith('/l/')) {
     const slug = url.pathname.slice(3);
     if (!slug || slug.includes('/')) return new Response('Not found', { status: 404 });
@@ -159,7 +167,7 @@ export async function handleRequest(
     return renderDashboardResponse(request, env, user!, slugFilter);
   }
 
-  // Root-level alias: /:slug → redirect.
+  // Canonical short link: /:slug → redirect.
   const slug = path.slice(1);
   if (!slug || slug.includes('/')) {
     return new Response('Not found', { status: 404 });
@@ -343,7 +351,7 @@ async function renderLandingResponse(request: Request, env: Env, url: URL): Prom
       origin,
       error,
       created,
-      reserved: created ? reserved : reserved,
+      reserved,
       welcome,
       migratedCount: Number.isFinite(migratedCount) ? migratedCount : undefined,
     }),

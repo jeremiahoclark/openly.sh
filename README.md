@@ -2,6 +2,8 @@
 
 **Own your links, or run the hosted link service yourself.**
 
+**Live site:** [openly.sh](https://openly.sh)
+
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/openly.sh/tree/main/example)
 
 openly.sh runs on Cloudflare Workers + D1 and now supports both paths:
@@ -64,17 +66,19 @@ Flags:
 | `--skip-install` | Skip `npm install` (useful in CI).                        |
 | `-h`, `--help`   | Show help.                                                |
 
-You need Node 18+ and a Cloudflare account. Magic-link email uses Cloudflare Email Service / Email Routing through the Worker `send_email` binding:
+You need Node 18+ and a Cloudflare account. Magic-link email uses [Cloudflare Email Service](https://developers.cloudflare.com/email-service/) (the transactional Email Sending product) through the Worker `send_email` binding. Unlike legacy Email Routing — which can only deliver to *verified destination addresses* on your account, useless for emailing arbitrary users — Email Service delivers to any recipient once your sender domain is onboarded.
+
+The CLI writes the `send_email` binding and (if you pass `--email-from`) the `EMAIL_FROM` var for you, so the only piece you do by hand is onboarding the sender domain — that step is dashboard-only (Cloudflare exposes no public API/wrangler command for it):
 
 1. Put the sender domain on Cloudflare DNS.
-2. Enable Cloudflare Email Service or Email Routing for that domain.
-3. Set `EMAIL_FROM` in `wrangler.jsonc` vars to a sender from that domain.
+2. In the dashboard, go to **Compute → Email Service → Email Sending → Onboard Domain**, pick that domain, and confirm the SPF / DKIM / DMARC records Cloudflare adds. Wait for verification (usually 5–15 min).
+3. Set `EMAIL_FROM` in `wrangler.jsonc` vars to a sender on that domain (e.g. `"Openly <links@example.com>"`) and redeploy.
 
-Without `EMAIL_FROM`, sign-in requests return a development-only link on screen instead of sending email.
+Sending to arbitrary recipients requires the **Workers Paid** plan. Without `EMAIL_FROM` (or before the domain verifies), sign-in requests return a development-only link on screen instead of sending email, so the app works immediately either way.
 
 ### 2. Deploy to Cloudflare button
 
-Click the button. Cloudflare clones the [`example/`](./example) tree into a new repo on your GitHub and deploys it — the D1 database and KV namespace are provisioned automatically, and the schema bootstraps itself on the first request. The one manual step is production email: enable Cloudflare Email Service / Email Routing for your sender domain and set the `EMAIL_FROM` var in `wrangler.jsonc`. Until then, sign-in links are shown on screen instead of emailed, so the app works immediately.
+Click the button. Cloudflare clones the [`example/`](./example) tree into a new repo on your GitHub and deploys it — the D1 database and KV namespace are provisioned automatically, and the schema bootstraps itself on the first request. The one manual step is production email: onboard your sender domain in **Compute → Email Service → Email Sending → Onboard Domain** (confirm the SPF/DKIM/DMARC records), then set the `EMAIL_FROM` var in `wrangler.jsonc` to a sender on that domain and redeploy. Until then, sign-in links are shown on screen instead of emailed, so the app works immediately.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jeremiahoclark/openly.sh/tree/main/example)
 
@@ -135,9 +139,10 @@ npm run typecheck    # tsc --noEmit
 npm run deploy       # migrate D1 + wrangler deploy
 ```
 
-For production magic-link email:
+For production magic-link email, the Worker sends through **Cloudflare Email Service** via the structured `send()` builder on the `send_email` binding (`env.EMAIL.send({ from, to, subject, html, text })`). No API keys or npm deps — delivery is handled by the platform.
 
-Set:
+1. Onboard the sender domain: dashboard → **Compute → Email Service → Email Sending → Onboard Domain**, then confirm the SPF/DKIM/DMARC DNS records. This is the only step with no public API/wrangler equivalent, so it must be done in the UI.
+2. Set the binding and vars in `wrangler.jsonc` (the CLI already writes these):
 
 ```json
 {
@@ -152,6 +157,10 @@ Set:
   ]
 }
 ```
+
+3. Redeploy. Sending to arbitrary recipients requires the **Workers Paid** plan.
+
+If a send fails, the sign-in page surfaces the reason (most often the sender domain isn't onboarded/verified yet, or the Worker is on the Free plan). Remove `EMAIL_FROM` to fall back to on-screen dev links while you sort it out.
 
 ## Repo layout
 

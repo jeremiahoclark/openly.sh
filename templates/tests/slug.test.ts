@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { slugify, validateSlug, validateUrl } from '../src/slug.ts';
+import { RESERVED_SLUGS, slugify, validateSlug, validateUrl } from '../src/slug.ts';
 
 test('slugify: spaces → dashes', () => {
   assert.equal(slugify('Data Report 1'), 'data-report-1');
@@ -50,6 +50,35 @@ test('validateSlug: rejects reserved words', () => {
 
   const authResult = validateSlug('signin');
   assert.equal(authResult.ok, false);
+});
+
+test('validateSlug: rejects root app routes now that slugs live at root', () => {
+  // These slug-shaped reserved words survive slugify unchanged and must be blocked.
+  for (const word of ['api', 'admin', 'auth', 'signin', 'logout', 'www']) {
+    const result = validateSlug(word);
+    assert.equal(result.ok, false, `expected "${word}" to be reserved`);
+    if (!result.ok) assert.match(result.reason, /reserved/);
+  }
+});
+
+test('RESERVED_SLUGS covers every root path the worker serves', () => {
+  for (const path of [
+    'l',
+    'api',
+    'admin',
+    'auth',
+    'signin',
+    'logout',
+    'www',
+    '_health',
+    'favicon.ico',
+    'favicon.svg',
+    'og-card.svg',
+    'robots.txt',
+    'sitemap.xml',
+  ]) {
+    assert.ok(RESERVED_SLUGS.has(path), `expected "${path}" in RESERVED_SLUGS`);
+  }
 });
 
 test('validateSlug: accepts normal slug-shaped strings', () => {

@@ -46,7 +46,7 @@ function siteFooterHtml(): string {
 // Focused activation step shown right after a link is reserved: just the
 // reserved link and the sign-in form, no hero or marketing sections.
 function renderActivate(created: PendingLink, opts: LandingOpts): string {
-  const shortUrl = `${opts.origin}/l/${created.slug}`;
+  const shortUrl = `${opts.origin}/${created.slug}`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -111,7 +111,7 @@ ${siteNavHtml()}
     <form class="link-bar-form" id="openly-landing-form" method="post" action="/api/pending">
       <div class="link-bar" role="group" aria-label="Create a short link">
         <div class="link-bar-slug" id="slug-field">
-          <span class="link-bar-prefix" aria-hidden="true">/l/</span>
+          <span class="link-bar-prefix" aria-hidden="true">/</span>
           <input type="text" id="slug-input" name="slug" placeholder="launch" required autocomplete="off" spellcheck="false" aria-label="Slug" aria-describedby="slug-feedback">
           <span id="slug-status" class="slug-status" role="status" aria-live="polite"></span>
         </div>
@@ -169,7 +169,7 @@ export function renderPendingGate(opts: {
   slug: string;
   url: string;
 }): string {
-  const shortUrl = `${opts.origin}/l/${opts.slug}`;
+  const shortUrl = `${opts.origin}/${opts.slug}`;
   return `<!doctype html>
 <html lang="en">
 <head>
@@ -262,7 +262,7 @@ function landingSlugScript(): string {
       input.value = normalized;
     }
     feedback.className = 'slug-feedback is-available';
-    feedback.innerHTML = \`Available on this site · <span class="preview">\${siteOrigin}/l/\${normalized}</span>\`;
+    feedback.innerHTML = \`Available on this site · <span class="preview">\${siteOrigin}/\${normalized}</span>\`;
     slugState.ready = true;
     slugState.checking = false;
     refreshSubmit();
@@ -284,7 +284,7 @@ function landingSlugScript(): string {
   function showSlugAvailable() {
     if (!slugState.ready || !slugState.normalized) return;
     feedback.className = 'slug-feedback is-available';
-    feedback.innerHTML = \`Available on this site · <span class="preview">\${siteOrigin}/l/\${slugState.normalized}</span>\`;
+    feedback.innerHTML = \`Available on this site · <span class="preview">\${siteOrigin}/\${slugState.normalized}</span>\`;
   }
 
   function syncUrlField() {

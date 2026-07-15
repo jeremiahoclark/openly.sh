@@ -99,8 +99,39 @@ test('guest can reserve first link from the landing form', async () => {
 
   assert.equal(landing.status, 200);
   assert.match(html, /Link reserved/);
-  assert.match(html, new RegExp(`/l/${slug}`));
+  // Short links present at the root now, not under /l/.
+  assert.match(html, new RegExp(`http://openly\\.test/${slug}\\b`));
+  assert.doesNotMatch(html, new RegExp(`/l/${slug}`));
   assert.match(html, /https:\/\/company\.com\//);
+});
+
+test('legacy /l/:slug still redirects to the destination', async () => {
+  const appEnv = env();
+  const slug = `legacy-${Date.now()}`;
+  await handleRequest(
+    new Request('http://openly.test/api/pending', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ slug, url: 'example.com' }),
+    }),
+    appEnv,
+    ctx(),
+  );
+  // Reserved (pending) links show the activation gate at /l/:slug too.
+  const gate = await handleRequest(new Request(`http://openly.test/l/${slug}`), appEnv, ctx());
+  assert.equal(gate.status, 200);
+  assert.match(await gate.text(), /This link is reserved/);
+});
+
+test('www host 301-redirects to the apex, preserving path and query', async () => {
+  const appEnv = env();
+  const res = await handleRequest(
+    new Request('https://www.openly.test/launch?utm=abc'),
+    appEnv,
+    ctx(),
+  );
+  assert.equal(res.status, 301);
+  assert.equal(res.headers.get('location'), 'https://openly.test/launch?utm=abc');
 });
 
 test('reserved links show the pending activation gate until sign-in', async () => {
