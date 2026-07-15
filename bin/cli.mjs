@@ -267,6 +267,7 @@ async function main() {
     const cfg = JSON.parse(fs.readFileSync(cfgPath, 'utf8').replace(/^\s*\/\/.*$/gm, ''));
     if (domain) {
       cfg.routes = [{ pattern: domain, custom_domain: true }];
+      cfg.workers_dev = false;
       cfg.vars = { ...(cfg.vars || {}), APP_ORIGIN: `https://${domain}` };
     }
     if (emailFrom) {
